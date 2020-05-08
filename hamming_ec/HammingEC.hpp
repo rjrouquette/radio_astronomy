@@ -8,6 +8,9 @@
 #include <cstddef>
 
 class HammingEC {
+private:
+    unsigned parityCount;
+
 public:
     const unsigned blockCount;
     const unsigned blockSize;
@@ -15,8 +18,10 @@ public:
     HammingEC(unsigned blockCount, unsigned blockSize) noexcept ;
     virtual ~HammingEC() = default ;
 
+    unsigned getParityCount() const { return parityCount; }
+
     void parity(void **blocks) const ;
-    void repair(void **blocks, bool *present) const ;
+    bool repair(void **blocks, const bool *present) const ;
 };
 
 
