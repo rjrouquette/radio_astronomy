@@ -15,3 +15,6 @@ Baseband sample data from the SDR DAS modules will transported over ethernet via
 | monotonic    | mod 2000     | mod 56         | PPS, PLL, OVR, etc.   |
 ------------------------------------------------------------------------
 ```
+
+## Master Clock
+A master clock system will be employed to minimize timming drift between the SDR DAS modules.  The master clock will transmit a BPSK encoded PPS on a 25 Mhz carrier via coax.  The rising edge of the PPS signal will be used to synchronize sample framing and PLL counters to minimuze phase errors.  The master clock source will be GPS disciplined to reduce frequency drift.
