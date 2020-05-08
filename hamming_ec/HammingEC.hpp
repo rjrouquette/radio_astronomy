@@ -6,10 +6,16 @@
 #define HAMMING_EC_HAMMINGEC_H
 
 #include <cstddef>
+#include <cstdint>
 
 class HammingEC {
 private:
+    typedef uint64_t slice_t;
+
     unsigned parityCount;
+
+    void clearBlock(slice_t *block) const ;
+    void xorBlock(slice_t *a, const slice_t *b) const ;
 
 public:
     const unsigned blockCount;
@@ -21,7 +27,7 @@ public:
     unsigned getParityCount() const { return parityCount; }
 
     void parity(void **blocks) const ;
-    bool repair(void **blocks, const bool *present) const ;
+    bool repair(void **blocks, bool *present) const ;
 };
 
 

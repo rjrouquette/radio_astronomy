@@ -2,53 +2,63 @@
 // Created by robert on 5/8/20.
 //
 
-#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include "HammingEC.hpp"
 
-typedef uint64_t slice_t;
-
 HammingEC::HammingEC(unsigned _blockCount, unsigned _blockSize) noexcept :
     blockCount(_blockCount), blockSize(_blockSize / sizeof(slice_t))
 {
-    if(blockCount < 3) abort();
+    if(blockCount < 4) abort();
     if(_blockSize % sizeof(slice_t) != 0) abort();
 
     parityCount = 0;
-    while((1u << parityCount) <= blockCount)
+    while((1u << parityCount) < blockCount)
         parityCount++;
 }
 
-void HammingEC::parity(void **blocks) const {
-    for(unsigned p = 0; p < parityCount; p++) {
-        const unsigned mask = 1u << p;
-
-        auto pblock = (slice_t*) blocks[mask - 1];
-        for(unsigned i = 0; i < blockSize; i++) {
-            pblock[i] = 0;
-        }
-        for (unsigned b = mask + 1; b <= blockCount; b++) {
-            if((b & mask) != 0u) {
-                auto block = (slice_t*) blocks[b - 1];
-                for(unsigned i = 0; i < blockSize; i++) {
-                    pblock[i] ^= block[i];
-                }
-            }
-        }
+void HammingEC::clearBlock(slice_t *block) const {
+    for(unsigned i = 0; i < blockSize; i++) {
+        block[i] = 0;
     }
 }
 
-bool HammingEC::repair(void **blocks, const bool *present) const {
-    unsigned moff[parityCount];
+void HammingEC::xorBlock(slice_t *a, const slice_t *b) const {
+    for(unsigned i = 0; i < blockSize; i++) {
+        a[i] ^= b[i];
+    }
+}
+
+void HammingEC::parity(void **blocks) const {
+    // sub-parity blocks
+    for(unsigned p = 0; p < parityCount; p++) {
+        const auto mask = 1u << p;
+        auto pblock = (slice_t*) blocks[mask];
+        clearBlock(pblock);
+        for (unsigned b = mask + 1; b < blockCount; b++) {
+            if((b & mask) != 0u) {
+                xorBlock(pblock, (slice_t*) blocks[b]);
+            }
+        }
+    }
+
+    // parity block
+    auto pblock = (slice_t*) blocks[0];
+    clearBlock(pblock);
+    for (unsigned b = 1; b < blockCount; b++) {
+        xorBlock(pblock, (slice_t*) blocks[b]);
+    }
+}
+
+bool HammingEC::repair(void **blocks, bool *present) const {
+    unsigned moff[3];
 
     unsigned missing = 0;
     for(unsigned i = 0; i < blockCount; i++) {
         if(!present[i]) {
-            if(missing >= parityCount)
+            if(missing >= 3)
                 return false;
-
-            moff[missing++] = i + 1;
+            moff[missing++] = i;
         }
     }
 
@@ -56,35 +66,59 @@ bool HammingEC::repair(void **blocks, const bool *present) const {
     if(missing == 0)
         return true;
 
-    // single missing block is trivial
-    if(missing == 1) {
-        // clear missing block
-        auto mblock = (slice_t*) blocks[moff[0] - 1];
-        for(unsigned i = 0; i < blockSize; i++) {
-            mblock[i] = 0;
-        }
+    // three missing blocks
+    if(missing >= 3) {
+        return false;
+    }
 
-        // compute parity mask
+    // two missing blocks
+    if(missing >= 2) {
+        auto diff = moff[0] ^ moff[1];
         unsigned mask = 0;
         for(unsigned p = 0; p < parityCount; p++) {
-            mask = 1u << p;
-            if((moff[0] & mask) != 0u)
+            if((diff >> p) & 1u) {
+                mask = 1u << p;
                 break;
+            }
         }
 
-        // reconstruct block using parity
-        for (unsigned b = 1; b <= blockCount; b++) {
-            if(b == moff[0])
-                continue;
+        // flip repair order if necessary
+        if((moff[1] & mask) == 0) {
+            auto temp = moff[0];
+            moff[0] = moff[1];
+            moff[1] = temp;
+        }
 
-            if((b & mask) != 0u) {
-                auto block = (slice_t*) blocks[b - 1];
-                for(unsigned i = 0; i < blockSize; i++) {
-                    mblock[i] ^= block[i];
+        // clear missing block
+        auto mblock = (slice_t*) blocks[moff[1]];
+        clearBlock(mblock);
+
+        // reconstruct block using parity mask
+        for (unsigned b = 1; b < blockCount; b++) {
+            if(present[b]) {
+                if ((b & mask) != 0u) {
+                    xorBlock(mblock, (slice_t *) blocks[b]);
                 }
             }
         }
+
+        // block is no-longer missing
+        present[moff[1]] = true;
     }
 
-    return false;
+    // fix missing block using overall parity
+    auto mblock = (slice_t*) blocks[moff[0]];
+    clearBlock(mblock);
+
+    // reconstruct block using parity
+    for (unsigned b = 0; b < blockCount; b++) {
+        if (present[b]) {
+            xorBlock(mblock, (slice_t*) blocks[b]);
+        }
+    }
+
+    // block is no-longer missing
+    present[moff[0]] = true;
+
+    return true;
 }

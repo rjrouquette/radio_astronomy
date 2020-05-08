@@ -9,10 +9,10 @@
 
 using namespace std;
 
-HammingEC hec(56, 1008);
+HammingEC hec(57, 1008);
 
-uint8_t orig[56][1008];
-uint8_t corr[56][1008];
+uint8_t orig[57][1008];
+uint8_t corr[57][1008];
 
 int main(int argc, char **argv) {
     std::random_device rd;
@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
     }
 
     void *blocks[hec.blockCount];
-    for(int i = 0; i < 56; i++) {
+    for(int i = 0; i < hec.blockCount; i++) {
         blocks[i] = orig[i];
     }
 
@@ -46,14 +46,14 @@ int main(int argc, char **argv) {
     }
 
     memcpy(corr, orig, sizeof(corr));
-    for(int i = 0; i < 56; i++) {
+    for(int i = 0; i < hec.blockCount; i++) {
         blocks[i] = corr[i];
     }
 
     bool present[hec.blockCount];
     memset(present, 1, sizeof(present));
 
-    int missing[] = { 54, 55 };
+    int missing[] = { 1, 3 };
     for(auto i : missing) {
         present[i] = false;
         bzero(corr[i], sizeof(corr[i]));
