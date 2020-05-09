@@ -10,7 +10,7 @@ The digitizer board performs direct digital synthesis on the IF signal to produc
 The SDR DAS modules will produce baseband I+Q samples at 25 MSps with 10 MHz for I, 10 MHz for Q, and a combined bandwidth of 20MHz.  The extra 2.5 MHz of Nyquist margin includes aliasing artifacts and may be utilized if degraded SNR is acceptable.  The 25 MSps I+Q data is formatted as two's complement 16-bit integers for both I and Q which yields a raw data bandwidth of 800 Mbps.  Gigabit ethernet is used to offload the sample data.
 
 ## Network Data Transport
-Baseband sample data from the SDR DAS modules will transported over ethernet via UDP.  To ensure reliable transmission in the face of packet loss, the UDP packets will be grouped into frames of 57 packets and employ a Hamming(57,50) erasure coding scheme.  This will allow for full frame recovery with, at most, 3 dropped packets per frame.  Each packet will contain an 8 byte header and 250 samples.  This yields a packet payload of 1008 bytes.  The header structure is shown below.
+Baseband sample data from the SDR DAS modules will transported over ethernet via UDP.  To ensure reliable transmission in the face of packet loss, the UDP packets will be grouped into frames of 56 packets and employ a Hamming(56,50) erasure coding scheme.  This will allow for recovering dropped packets as long as tehre are no more than 2 dropped packets per frame.  Each packet will contain an 8 byte header and 250 samples.  This yields a packet payload of 1008 bytes.  The header structure is shown below.
 
 ```
 ------------------------------------------------------------------------

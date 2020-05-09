@@ -6,30 +6,15 @@
 #define HAMMING_EC_HAMMINGEC_H
 
 #include <cstddef>
-#include <cstdint>
 
-class HammingEC {
-private:
-    typedef uint64_t slice_t;
+namespace HammingEC_56 {
+    unsigned getBlockCount();
+    unsigned getParityCount();
+    unsigned getDataCount();
 
-    unsigned parityCount;
-
-    void clearBlock(slice_t *block) const ;
-    void xorBlock(slice_t *a, const slice_t *b) const ;
-    void repairBlock(void *block, unsigned mask, void **blocks, const bool *present) const;
-
-public:
-    const unsigned blockCount;
-    const unsigned blockSize;
-
-    HammingEC(unsigned blockCount, unsigned blockSize) noexcept ;
-    virtual ~HammingEC() = default ;
-
-    unsigned getParityCount() const { return parityCount; }
-
-    void parity(void **blocks) const ;
-    bool repair(void **blocks, bool *present) const ;
-};
-
+    void initLuts();
+    void parity(unsigned blockSize, void **blocks);
+    bool repair(unsigned blockSize, void **blocks, bool *present);
+}
 
 #endif //HAMMING_EC_HAMMINGEC_H

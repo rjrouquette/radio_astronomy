@@ -9,29 +9,29 @@
 
 using namespace std;
 
-HammingEC hec(57, 1008);
-
-uint8_t orig[57][1008];
-uint8_t corr[57][1008];
+uint8_t orig[56][1008];
+uint8_t corr[56][1008];
 
 int main(int argc, char **argv) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<unsigned> dis(0, 255);
 
+    HammingEC_56::initLuts();
+
     auto temp = orig[0];
     for(size_t i = 0; i < sizeof(orig); i++) {
         temp[i] = dis(gen);
     }
 
-    void *blocks[hec.blockCount];
-    for(int i = 0; i < hec.blockCount; i++) {
+    void *blocks[HammingEC_56::getBlockCount()];
+    for(int i = 0; i < HammingEC_56::getBlockCount(); i++) {
         blocks[i] = orig[i];
     }
 
-    cout << "parity bits: " << hec.getParityCount() << endl;
+    cout << "parity bits: " << HammingEC_56::getParityCount() << endl;
 
-    hec.parity(blocks);
+    HammingEC_56::parity(sizeof(orig[0]), blocks);
     cout << "computed parity blocks" << endl;
     for(auto &b : orig) {
         cout << " - ";
@@ -46,20 +46,20 @@ int main(int argc, char **argv) {
     }
 
     memcpy(corr, orig, sizeof(corr));
-    for(int i = 0; i < hec.blockCount; i++) {
+    for(int i = 0; i < HammingEC_56::getBlockCount(); i++) {
         blocks[i] = corr[i];
     }
 
-    bool present[hec.blockCount];
+    bool present[HammingEC_56::getBlockCount()];
     memset(present, 1, sizeof(present));
 
-    int missing[] = { 12,13,14 };
+    int missing[] = { 13,14 };
     for(auto i : missing) {
         present[i] = false;
         bzero(corr[i], sizeof(corr[i]));
     }
 
-    if(!hec.repair(blocks, present)) {
+    if(!HammingEC_56::repair(sizeof(corr[0]), blocks, present)) {
         cout << "failed to repair missing blocks" << endl;
     }
 
