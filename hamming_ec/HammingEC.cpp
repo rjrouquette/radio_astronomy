@@ -9,10 +9,10 @@
 
 #define BLOCK_COUNT (56)
 #define PARITY_BITS (6)
-#define MAX_MISSING (6)
+#define MAX_MISSING (2)
 
-unsigned lutSingleMask[56];
-unsigned lutDoubleMask[55][56][4];
+unsigned lutSingleMask[BLOCK_COUNT];
+unsigned lutDoubleMask[BLOCK_COUNT - 1][BLOCK_COUNT][4];
 
 namespace HammingEC_56 {
     typedef uint64_t slice_t;
