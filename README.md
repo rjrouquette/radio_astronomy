@@ -2,7 +2,8 @@
 This project is an attempt at an SDR DAS phased-array radio astronomy system.  The intent is to produce a flexible and scalable system that can be easily repurposed with minimal additional cost.
 
 ## Digitizer
-The digitizer board performs direct digital synthesis on the IF signal to produce I+Q baseband data.  The IF center frequency is 50MHz with a 20MHz bandwidth.
+The digitizer board employs a direct IF to digital conversion toplogy to reduce the 50 MHz IF input into I+Q baseband data.
+
 ![alt text][digitzer]
 
 
@@ -20,6 +21,8 @@ Baseband sample data from the SDR DAS modules will transported over ethernet via
 | monotonic    | mod 2000     | mod 56         | PPS, PLL, OVR, etc.   |
 ------------------------------------------------------------------------
 ```
+
+The total protocol overhead (EC + UDP + IP + Ethernet) comes to 22.5% (979.5 Mbps)
 
 ## Master Clock
 A master clock system will be employed to minimize timming drift between the SDR DAS modules.  The master clock will transmit a BPSK encoded PPS on a 25 Mhz carrier via coax.  The rising edge of the PPS signal will be used to synchronize sample framing and PLL counters to minimuze phase errors.  The master clock source will be GPS disciplined to reduce frequency drift.
