@@ -2,7 +2,7 @@
 This project is an attempt at an SDR DAS phased-array radio astronomy system.  The intent is to produce a flexible and scalable system that can be easily repurposed with minimal additional cost.
 
 ## Digitizer
-The digitizer board performs direct digital synthesis on the IF signal to produce I+Q baseband data.  The IF center frequency is 50MHz with a 20MHz bandwidth.
+The digitizer board employs a direct IF to digital conversion toplogy to produce I+Q baseband data.  The IF center frequency is 50MHz with a 20MHz bandwidth.
 ![alt text][digitzer]
 
 
