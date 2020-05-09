@@ -29,6 +29,29 @@ void HammingEC::xorBlock(slice_t *a, const slice_t *b) const {
     }
 }
 
+void HammingEC::repairBlock(void *_block, unsigned int mask, void **blocks, const bool *present) const {
+    auto block = (slice_t *) _block;
+    clearBlock(block);
+
+    if (mask == -1u) {
+        // reconstruct block using overall parity
+        for (unsigned b = 0; b < blockCount; b++) {
+            if (present[b]) {
+                xorBlock(block, (slice_t *) blocks[b]);
+            }
+        }
+    } else {
+        // reconstruct block using parity mask
+        for (unsigned b = 1; b < blockCount; b++) {
+            if (present[b]) {
+                if ((b & mask) != 0u) {
+                    xorBlock(block, (slice_t *) blocks[b]);
+                }
+            }
+        }
+    }
+}
+
 void HammingEC::parity(void **blocks) const {
     // sub-parity blocks
     for(unsigned p = 0; p < parityCount; p++) {
@@ -66,13 +89,15 @@ bool HammingEC::repair(void **blocks, bool *present) const {
     if(missing == 0)
         return true;
 
-    // three missing blocks
-    if(missing >= 3) {
-        return false;
+    // one missing block
+    if(missing == 1) {
+        repairBlock(blocks[moff[0]], -1u, blocks, present);
+        present[moff[0]] = true;
+        return true;
     }
 
     // two missing blocks
-    if(missing >= 2) {
+    if(missing == 2) {
         auto diff = moff[0] ^ moff[1];
         unsigned mask = 0;
         for(unsigned p = 0; p < parityCount; p++) {
@@ -89,36 +114,54 @@ bool HammingEC::repair(void **blocks, bool *present) const {
             moff[1] = temp;
         }
 
-        // clear missing block
-        auto mblock = (slice_t*) blocks[moff[1]];
-        clearBlock(mblock);
+        // fix blocks
+        repairBlock(blocks[moff[1]], mask, blocks, present);
+        present[moff[1]] = true;
+        repairBlock(blocks[moff[0]], -1u, blocks, present);
+        present[moff[0]] = true;
+        return true;
+    }
 
-        // reconstruct block using parity mask
-        for (unsigned b = 1; b < blockCount; b++) {
-            if(present[b]) {
-                if ((b & mask) != 0u) {
-                    xorBlock(mblock, (slice_t *) blocks[b]);
+    // three missing blocks
+    if(missing == 3) {
+        // special case if overall parity is missing
+        if(moff[0] == 0) {
+            auto diff = moff[1] ^ moff[2];
+            unsigned mask = 0;
+            for(unsigned p = 0; p < parityCount; p++) {
+                if((diff >> p) & 1u) {
+                    mask = 1u << p;
+                    break;
                 }
             }
+
+            // flip repair order if necessary
+            if((moff[2] & mask) == 0) {
+                auto temp = moff[1];
+                moff[1] = moff[2];
+                moff[2] = temp;
+            }
+
+            repairBlock(blocks[moff[2]], mask, blocks, present);
+            present[moff[2]] = true;
+
+            mask = 0;
+            for(unsigned p = 0; p < parityCount; p++) {
+                if((moff[1] >> p) & 1u) {
+                    mask = 1u << p;
+                    break;
+                }
+            }
+
+            repairBlock(blocks[moff[1]], mask, blocks, present);
+            present[moff[1]] = true;
+
+            repairBlock(blocks[moff[0]], -1u, blocks, present);
+            present[moff[0]] = true;
+            return true;
         }
 
-        // block is no-longer missing
-        present[moff[1]] = true;
     }
 
-    // fix missing block using overall parity
-    auto mblock = (slice_t*) blocks[moff[0]];
-    clearBlock(mblock);
-
-    // reconstruct block using parity
-    for (unsigned b = 0; b < blockCount; b++) {
-        if (present[b]) {
-            xorBlock(mblock, (slice_t*) blocks[b]);
-        }
-    }
-
-    // block is no-longer missing
-    present[moff[0]] = true;
-
-    return true;
+    return false;
 }

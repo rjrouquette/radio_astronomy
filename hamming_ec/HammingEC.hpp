@@ -16,6 +16,7 @@ private:
 
     void clearBlock(slice_t *block) const ;
     void xorBlock(slice_t *a, const slice_t *b) const ;
+    void repairBlock(void *block, unsigned mask, void **blocks, const bool *present) const;
 
 public:
     const unsigned blockCount;

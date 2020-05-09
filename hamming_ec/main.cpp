@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     bool present[hec.blockCount];
     memset(present, 1, sizeof(present));
 
-    int missing[] = { 1, 3 };
+    int missing[] = { 12,13,14 };
     for(auto i : missing) {
         present[i] = false;
         bzero(corr[i], sizeof(corr[i]));
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
         cout << "failed to repair missing blocks" << endl;
     }
 
-    cout << "repaired missing blocks" << endl;
+    cout << "repaired missing blocks" << endl;/*
     for(auto &b : corr) {
         cout << " - ";
         unsigned byte = b[0];
@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
                 cout << "1";
         }
         cout << endl;
-    }
+    }*/
 
     if(memcmp(corr, orig, sizeof(corr)) != 0) {
         cout << "error repairing data" << endl;
