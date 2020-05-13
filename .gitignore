@@ -13,5 +13,5 @@ core
 !/core
 
 # EAGLE temp files
-.b#*
-.s#*
+*.b#*
+*.s#*
