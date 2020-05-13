@@ -163,7 +163,7 @@
 <hole x="22.225" y="73.025" drill="3.175"/>
 <hole x="22.225" y="3.175" drill="3.175"/>
 <text x="28.575" y="3.175" size="1.778" layer="25">50 Ohm SMA
-5V Supply
+3.3V - 5V Supply
 1.400GHz - 1.427GHz
 8.44dBi
 20dB LNA</text>
