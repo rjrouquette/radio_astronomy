@@ -166,7 +166,7 @@
 4V - 6V Supply
 1.400GHz - 1.427GHz
 8.41dBi
-20dB LNA</text>
+19dB LNA</text>
 </plain>
 <libraries>
 <library name="transistor-small-signal" urn="urn:adsk.eagle:library:401">
