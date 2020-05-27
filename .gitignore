@@ -16,3 +16,7 @@ core
 *.b#*
 *.s#*
 *.zip
+
+# LTSpice temp file
+*.log
+*.raw
