@@ -18,7 +18,6 @@ add_executable(
         gpsdo
 
         main.c
-        leds.h
-        gpio.c
-        gpio.h
-)
+        gpsdo.c
+        gpsdo.h
+        nop.h)

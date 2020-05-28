@@ -2,26 +2,22 @@
 #include <avr/interrupt.h>
 #include <stdio.h>
 
-#include "gpio.h"
+#include "gpsdo.h"
+#include "nop.h"
 
 void initSysClock(void);
 
 int main(void) {
     cli();
-    initGpio();
-    ledOn();
     initSysClock();
+    initGPSDO();
 
     // startup complete
     PMIC.CTRL = 0x04u; // enable high-level interrupts
-    ledOff();
 
     // infinite loop
     sei();
-    asm(
-        "rjloop:\n"
-        "rjmp rjloop"
-    );
+    for(;;) { nop(); }
 
     return 0;
 }
@@ -48,7 +44,7 @@ void initSysClock(void) {
     CLK.CTRL = CLK_SCLKSEL_XOSC_gc; // Select external clock
     nop4();
 }
-
+/*
 ISR(OSC_OSCF_vect) {
     // reset xmega
     ledOff();
@@ -75,3 +71,4 @@ ISR(PORTE_INT0_vect, ISR_NAKED) {
 
     asm volatile("reti");
 }
+*/
