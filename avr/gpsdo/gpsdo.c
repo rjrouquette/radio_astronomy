@@ -12,8 +12,7 @@
 #define LED1 (2u)
 
 // loop tuning
-#define MAX_PPS_DELTA (4) // 64 microseconds
-#define MAX_PLL_INTERVAL (64) // 64 PPS events
+#define MAX_PPS_DELTA (2) // 32 microseconds
 #define SETTLED_VAR (40000) // 1 microsecond RMS
 #define RING_SIZE (64u)
 #define RING_DIV (8u)
@@ -33,13 +32,11 @@
 
 volatile uint16_t ppsOffset;
 volatile uint16_t pllFeedback;
-volatile uint16_t pllInterval;
-volatile uint16_t pllDivisor;
 
+volatile int16_t prevPllError;
 volatile uint8_t prevPllUpdate;
 volatile uint8_t statsIndex;
 volatile int16_t error[RING_SIZE];
-volatile uint16_t interval[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
 
 uint8_t pllLocked;
@@ -60,13 +57,12 @@ inline void ledOff(uint8_t mask) {
 void initGPSDO() {
     ppsOffset = 0;
     pllFeedback = 0;
-    pllInterval = 1;
-    pllDivisor = 1;
     statsIndex = 0;
     prevPllUpdate = 0;
     pllLocked = 0;
     pllError = 0;
     pllErrorVar = 0;
+    prevPllError = 0;
 
     // init LEDs
     LED_PORT.DIRSET = LED0 | LED1;
@@ -122,10 +118,6 @@ void initGPSDO() {
 
 uint8_t isPllLocked() {
     return pllLocked;
-}
-
-uint16_t getPllInterval() {
-    return pllInterval;
 }
 
 int32_t getPllError() {
@@ -195,39 +187,35 @@ inline void alignPPS() {
     if(diff > MAX_PPS_DELTA) {
         setPpsOffset(TCD0.CCA);
         realigned[statsIndex] = 1;
+        prevPllError = 0;
     } else {
         realigned[statsIndex] = 0;
     }
-}
-
-inline uint8_t checkPllDivisor() {
-    if(--pllDivisor > 0) {
-        return 0;
-    }
-    pllDivisor = pllInterval;
-    return 1;
 }
 
 inline void onRisingPPS() {
     // check if PPS was realigned
     alignPPS();
 
-    // check if it is time to update the PLL
-    if(!checkPllDivisor())
-        return;
-
-    // update PLL feedback
-    if(PORTB.IN & 1u) {
-        incFeedback();
-    } else {
-        decFeedback();
-    }
-
-    error[statsIndex] = getDelta(
+    int16_t currError = getDelta(
             TCC1.CCA, TCD0.CCA,
             TCC1.CCB, TCD0.CCB
     );
-    interval[statsIndex] = pllInterval;
+    int16_t deltaError = currError - prevPllError;
+
+    // update PLL feedback
+    if(PORTB.IN & 1u) {
+        if(deltaError <= 0) {
+            incFeedback();
+        }
+    } else {
+        if(deltaError >= 0) {
+            decFeedback();
+        }
+    }
+
+    prevPllError = currError;
+    error[statsIndex] = currError;
     statsIndex = (statsIndex + 1u) & (RING_SIZE - 1u);
 }
 
@@ -245,11 +233,11 @@ void updatePLL() {
     if(pllLocked)
         ledOn(LED1);
 
-    uint8_t unstable = 0;
+    pllLocked = 1;
     int32_t acc = 0;
     for(uint8_t i = 0; i < RING_SIZE; i++) {
         acc += error[i];
-        unstable |= realigned[i];
+        pllLocked &= (realigned[i] ^ 1u);
     }
     pllError = acc / RING_DIV;
 
@@ -260,28 +248,6 @@ void updatePLL() {
         acc += diff * diff;
     }
     pllErrorVar = acc;
-
-    if(unstable) {
-        // PLL lock has been broken, start over
-        pllLocked = 0;
-        pllInterval = 1;
-        pllDivisor = 1;
-    } else {
-        // gradually reduce update interval to improve stability
-        pllLocked = 1;
-        if(pllInterval < MAX_PLL_INTERVAL) {
-            uint16_t match = interval[0];
-            for(uint8_t i = 1; i < RING_SIZE; i++) {
-                if(match != interval[i]) {
-                    match = 0;
-                    break;
-                }
-            }
-            if(match) {
-                pllInterval = pllInterval << 1u;
-            }
-        }
-    }
 
     ledOff(LED0);
     if((!pllLocked) || (pllErrorVar > SETTLED_VAR))

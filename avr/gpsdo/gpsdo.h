@@ -9,7 +9,6 @@ void initGPSDO();
 void updatePLL();
 
 uint8_t isPllLocked();
-uint16_t getPllInterval();
 int32_t getPllError();
 int32_t getPllErrorVar();
 
