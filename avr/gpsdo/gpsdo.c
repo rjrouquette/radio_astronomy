@@ -11,11 +11,25 @@
 #define LED0 (1u)
 #define LED1 (2u)
 
+// loop tuning
 #define MAX_PPS_DELTA (4) // 64 microseconds
 #define MAX_PLL_INTERVAL (64) // 64 PPS events
-#define SETTLED_VAR (40000) // 25 microseconds RMS
+#define SETTLED_VAR (40000) // 1 microsecond RMS
 #define RING_SIZE (64u)
 #define RING_DIV (8u)
+
+// hi-res counter
+#define DIV_LSB (400)
+
+// low-res counter
+#define DIV_MSB    ( 62500)
+#define MOD_MSB_HI ( 31249)
+#define MOD_MSB_LO (-31250)
+
+// combined counters
+#define DIV_ALL    ( 25000000)
+#define MOD_ALL_HI ( 12499999)
+#define MOD_ALL_LO (-12500000)
 
 volatile uint16_t ppsOffset;
 volatile uint16_t pllFeedback;
@@ -79,7 +93,7 @@ void initGPSDO() {
     // PPS Prescaling
     TCC1.CTRLB = 0x30u;
     TCC1.CTRLD = 0x2du;
-    TCC1.PER = 399u;
+    TCC1.PER = DIV_LSB - 1u;
     // OVF carry
     EVSYS.CH7MUX = 0xc8u;
     EVSYS.CH7CTRL = 0x00u;
@@ -88,7 +102,7 @@ void initGPSDO() {
     PORTC.DIRSET = 0x03u;
     TCC0.CTRLA = 0x0fu;
     TCC0.CTRLB = 0x33u;
-    TCC0.PER = 62499u;
+    TCC0.PER = DIV_MSB - 1u;
     setPpsOffset(0);
 
     // PPS Capture
@@ -96,7 +110,7 @@ void initGPSDO() {
     TCD0.CTRLB = 0x30u;
     TCD0.CTRLD = 0x3du;
     TCD0.INTCTRLB = 0x03u;
-    TCD0.PER = 62499u;
+    TCD0.PER = DIV_MSB - 1u;
     TCD0.CCA = 0u;
     TCD0.CCB = 0u;
 
@@ -123,7 +137,7 @@ int32_t getPllErrorVar() {
 }
 
 void setPpsOffset(uint16_t offset) {
-    if(offset < 56249) {
+    if(offset < 56250) {
         TCC0.CCA = offset;
         TCC0.CCB = offset + 6250;
         PORTC.PIN0CTRL = 0x00u;
@@ -135,15 +149,16 @@ void setPpsOffset(uint16_t offset) {
     ppsOffset = offset;
 }
 
-int16_t getDelta(uint16_t a0, uint16_t a1, uint16_t b0, uint16_t b1) {
-    int32_t a = (a1 * 400) * a0;
-    int32_t b = (b1 * 400) * b0;
+int16_t getDelta(uint16_t lsbA, uint16_t msbA, uint16_t lsbB, uint16_t msbB) {
+    int32_t a = (((uint32_t)msbA) * DIV_LSB) + lsbA;
+    int32_t b = (((uint32_t)msbB) * DIV_LSB) + lsbB;
+
     // modulo difference
     int32_t diff = a - b;
-    if(diff > 12499999)
-        diff = 25000000 - diff;
-    if(diff < -125000000)
-        diff = 25000000 + diff;
+    if(diff > MOD_ALL_HI)
+        diff = DIV_ALL - diff;
+    if(diff < MOD_ALL_LO)
+        diff = DIV_ALL + diff;
 
     if(diff > 32767)
         return 32767;
@@ -165,19 +180,20 @@ inline void incFeedback() {
 }
 
 inline void alignPPS() {
-    // faster alignment
-    uint16_t a = TCD0.CCA;
-    uint16_t b = TCD0.CCB;
-    uint16_t delta;
-    if(a > b)
-        delta = a - b;
-    else
-        delta = b - a;
-    if(delta > 31249)
-        delta = 62500 - delta;
+    int32_t a = (uint32_t) TCD0.CCA;
+    int32_t b = (uint32_t) TCD0.CCB;
 
-    if(delta > MAX_PPS_DELTA) {
-        setPpsOffset(a);
+    // modulo difference
+    int32_t diff = a - b;
+    if(diff > MOD_MSB_HI)
+        diff = DIV_MSB - diff;
+    if(diff < MOD_MSB_LO)
+        diff = DIV_MSB + diff;
+
+    // force PPS alignment if outside tolerance
+    if(diff < 0) diff = -diff;
+    if(diff > MAX_PPS_DELTA) {
+        setPpsOffset(TCD0.CCA);
         realigned[statsIndex] = 1;
     } else {
         realigned[statsIndex] = 0;
