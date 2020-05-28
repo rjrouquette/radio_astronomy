@@ -15,8 +15,10 @@
 
 volatile uint16_t ppsOffset;
 volatile uint16_t pllFeedback;
+volatile uint16_t pllInterval;
+volatile uint16_t pllDivisor;
 
-void setPpsOffset(uint16_t offset);
+void setPpsFeedback(uint16_t offset);
 
 inline void ledOn(uint8_t mask) {
     LED_PORT.OUTSET = mask;
@@ -28,6 +30,9 @@ inline void ledOff(uint8_t mask) {
 
 void initGPSDO() {
     ppsOffset = 0;
+    pllFeedback = 0;
+    pllInterval = 1;
+    pllDivisor = 1;
 
     // init LEDs
     LED_PORT.DIRSET = LED0 | LED1;
@@ -62,7 +67,7 @@ void initGPSDO() {
     TCC0.CTRLA = 0x0fu;
     TCC0.CTRLB = 0x33u;
     TCC0.PER = 62499u;
-    setPpsOffset(0);
+    setPpsFeedback(0);
 
     // PPS Capture
     TCD0.CTRLA = 0x0fu;
@@ -79,7 +84,7 @@ void initGPSDO() {
     TCC1.CTRLA = 0x01u;
 }
 
-void setPpsOffset(uint16_t offset) {
+void setPpsFeedback(uint16_t offset) {
     if(offset <= 56249) {
         TCC0.CCA = offset;
         TCC0.CCB = offset + 6250;
@@ -106,6 +111,11 @@ void incFeedback() {
 
 // PPS leading edge
 ISR(TCD0_CCA_vect, ISR_BLOCK) {
+    if(--pllDivisor > 0) {
+        return;
+    }
+    pllDivisor = pllInterval;
+
     if(PORTB.IN & 1u) {
         incFeedback();
         ledOn(LED1);
@@ -125,6 +135,6 @@ ISR(TCD0_CCA_vect, ISR_BLOCK) {
     if(delta > 31250)
         delta = 62500 - delta;
     if(delta > MAX_DELTA) {
-        setPpsOffset(a);
+        setPpsFeedback(a);
     }
 }
