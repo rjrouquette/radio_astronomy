@@ -7,6 +7,8 @@ cmake-build-*/
 build/
 dist/
 *.bin
+*.elf
+*.hex
 
 # Core dumps
 core
