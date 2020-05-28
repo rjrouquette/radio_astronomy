@@ -11,14 +11,27 @@
 #define LED0 (1u)
 #define LED1 (2u)
 
-#define MAX_DELTA (4) // 64 microseconds
+#define MAX_PPS_DELTA (4) // 64 microseconds
+#define MAX_PLL_INTERVAL (64) // 64 PPS events
+#define SETTLED_VAR (40000) // 25 microseconds RMS
 
 volatile uint16_t ppsOffset;
 volatile uint16_t pllFeedback;
 volatile uint16_t pllInterval;
 volatile uint16_t pllDivisor;
 
-void setPpsFeedback(uint16_t offset);
+volatile uint8_t prevPllUpdate;
+volatile uint8_t statsIndex;
+volatile int16_t error[64];
+volatile uint16_t interval[64];
+volatile uint8_t realigned[64];
+
+uint8_t pllLocked;
+int32_t pllError;
+int32_t pllErrorVar;
+
+
+void setPpsOffset(uint16_t offset);
 
 inline void ledOn(uint8_t mask) {
     LED_PORT.OUTSET = mask;
@@ -33,6 +46,11 @@ void initGPSDO() {
     pllFeedback = 0;
     pllInterval = 1;
     pllDivisor = 1;
+    statsIndex = 0;
+    prevPllUpdate = 0;
+    pllLocked = 0;
+    pllError = 0;
+    pllErrorVar = 0;
 
     // init LEDs
     LED_PORT.DIRSET = LED0 | LED1;
@@ -57,6 +75,8 @@ void initGPSDO() {
     EVSYS.CH6CTRL = 0x00u;
 
     // PPS Prescaling
+    TCC1.CTRLB = 0x30u;
+    TCC1.CTRLD = 0x2du;
     TCC1.PER = 399u;
     // OVF carry
     EVSYS.CH7MUX = 0xc8u;
@@ -67,12 +87,12 @@ void initGPSDO() {
     TCC0.CTRLA = 0x0fu;
     TCC0.CTRLB = 0x33u;
     TCC0.PER = 62499u;
-    setPpsFeedback(0);
+    setPpsOffset(0);
 
     // PPS Capture
     TCD0.CTRLA = 0x0fu;
     TCD0.CTRLB = 0x30u;
-    TCD0.CTRLD = 0x2du;
+    TCD0.CTRLD = 0x3du;
     TCD0.INTCTRLB = 0x03u;
     TCD0.PER = 62499u;
     TCD0.CCA = 0u;
@@ -84,8 +104,24 @@ void initGPSDO() {
     TCC1.CTRLA = 0x01u;
 }
 
-void setPpsFeedback(uint16_t offset) {
-    if(offset <= 56249) {
+uint8_t isPllLocked() {
+    return pllLocked;
+}
+
+uint16_t getPllInterval() {
+    return pllInterval;
+}
+
+int32_t getPllError() {
+    return pllError;
+}
+
+int32_t getPllErrorVar() {
+    return pllErrorVar;
+}
+
+void setPpsOffset(uint16_t offset) {
+    if(offset < 56249) {
         TCC0.CCA = offset;
         TCC0.CCB = offset + 6250;
         PORTC.PIN0CTRL = 0x00u;
@@ -97,33 +133,36 @@ void setPpsFeedback(uint16_t offset) {
     ppsOffset = offset;
 }
 
-void decFeedback() {
-    if(pllFeedback > 0) {
+int16_t getDelta(uint16_t a0, uint16_t a1, uint16_t b0, uint16_t b1) {
+    int32_t a = (a1 * 400) * a0;
+    int32_t b = (b1 * 400) * b0;
+    // modulo difference
+    int32_t diff = a - b;
+    if(diff > 12499999)
+        diff = 25000000 - diff;
+    if(diff < -125000000)
+        diff = 25000000 + diff;
+
+    if(diff > 32767)
+        return 32767;
+    if(diff < -32768)
+        return -32768;
+    return (int16_t) diff;
+}
+
+inline void decFeedback() {
+    if(pllFeedback > 0u) {
         DACB.CH0DATA = --pllFeedback;
     }
 }
 
-void incFeedback() {
-    if(pllFeedback < 4095) {
+inline void incFeedback() {
+    if(pllFeedback < 4095u) {
         DACB.CH0DATA = ++pllFeedback;
     }
 }
 
-// PPS leading edge
-ISR(TCD0_CCA_vect, ISR_BLOCK) {
-    if(--pllDivisor > 0) {
-        return;
-    }
-    pllDivisor = pllInterval;
-
-    if(PORTB.IN & 1u) {
-        incFeedback();
-        ledOn(LED1);
-    } else {
-        decFeedback();
-        ledOff(LED1);
-    }
-
+inline void alignPPS() {
     // faster alignment
     uint16_t a = TCD0.CCA;
     uint16_t b = TCD0.CCB;
@@ -132,9 +171,101 @@ ISR(TCD0_CCA_vect, ISR_BLOCK) {
         delta = a - b;
     else
         delta = b - a;
-    if(delta > 31250)
+    if(delta > 31249)
         delta = 62500 - delta;
-    if(delta > MAX_DELTA) {
-        setPpsFeedback(a);
+
+    if(delta > MAX_PPS_DELTA) {
+        setPpsOffset(a);
+        realigned[statsIndex] = 1;
+    } else {
+        realigned[statsIndex] = 0;
     }
+}
+
+inline uint8_t checkPllDivisor() {
+    if(--pllDivisor > 0) {
+        return 0;
+    }
+    pllDivisor = pllInterval;
+    return 1;
+}
+
+inline void onRisingPPS() {
+    // check if PPS was realigned
+    alignPPS();
+
+    // check if it is time to update the PLL
+    if(!checkPllDivisor())
+        return;
+
+    // update PLL feedback
+    if(PORTB.IN & 1u) {
+        incFeedback();
+    } else {
+        decFeedback();
+    }
+
+    error[statsIndex] = getDelta(
+            TCC1.CCA, TCD0.CCA,
+            TCC1.CCB, TCD0.CCB
+    );
+    interval[statsIndex] = pllInterval;
+    statsIndex = (statsIndex + 1u) & 63u;
+}
+
+// PPS leading edge
+ISR(TCD0_CCA_vect, ISR_BLOCK) {
+    onRisingPPS();
+}
+
+void updatePLL() {
+    if(statsIndex == prevPllUpdate)
+        return;
+    prevPllUpdate = statsIndex;
+
+    ledOn(LED0);
+    if(pllLocked)
+        ledOn(LED1);
+
+    uint8_t unstable = 0;
+    int32_t acc = 0;
+    for(uint8_t i = 0; i < 64; i++) {
+        acc += error[i];
+        unstable |= realigned[i];
+    }
+    pllError = acc / 8;
+
+    int16_t mean = (int16_t) (acc / 64);
+    acc = 0;
+    for(uint8_t i = 0; i < 64; i++) {
+        int32_t diff = error[i] - mean;
+        acc += diff * diff;
+    }
+    pllErrorVar = acc;
+
+    if(unstable) {
+        // PLL lock has been broken, start over
+        pllLocked = 0;
+        pllInterval = 1;
+        pllDivisor = 1;
+    } else {
+        // gradually reduce update interval to improve stability
+        pllLocked = 1;
+        if(pllInterval < MAX_PLL_INTERVAL) {
+            uint16_t match = interval[0];
+            for(uint8_t i = 1; i < 64; i++) {
+                if(match != interval[i]) {
+                    match = 0;
+                    break;
+                }
+            }
+            if(match) {
+                pllInterval = pllInterval << 1u;
+            }
+        }
+    }
+
+    ledOff(LED0);
+    if((!pllLocked) || (pllErrorVar > SETTLED_VAR))
+        ledOff(LED1);
 }

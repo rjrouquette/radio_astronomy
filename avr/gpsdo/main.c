@@ -17,12 +17,8 @@ int main(void) {
     sei();
 
     // infinite loop
-    //for(;;) { nop(); }
     for(;;) {
-        if(PORTA.IN & 0x80u)
-            PORTD.OUTSET = 1;
-        else
-            PORTD.OUTCLR = 1;
+        updatePLL();
     }
 
     return 0;
