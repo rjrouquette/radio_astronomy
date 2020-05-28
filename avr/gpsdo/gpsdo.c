@@ -11,6 +11,8 @@
 #define LED0 (1u)
 #define LED1 (2u)
 
+#define MAX_DELTA (4) // 64 microseconds
+
 volatile uint16_t ppsOffset;
 volatile uint16_t pllFeedback;
 
@@ -122,7 +124,7 @@ ISR(TCD0_CCA_vect, ISR_BLOCK) {
         delta = b - a;
     if(delta > 31250)
         delta = 62500 - delta;
-    if(delta > 62) {
+    if(delta > MAX_DELTA) {
         setPpsOffset(a);
     }
 }
