@@ -10,4 +10,11 @@ The LNA utilizes the BFU730F transistor at its core and provides a 75 Ohm input 
 
 ![alt text][antenna]
 
+## Master Clock (GPSDO)
+The master clock board is based around the STMicro TESEO-LIV3R GPS module and a SiTime SIT3807 VCXO.  The board injects 3.3 V into the 50 Ohm GPS SMA connector to support active antennas.  The reference clock BPSK output signals are provided through four 50 Ohm SMA connectors.
+
+![alt text][clk_master]
+
+
 [antenna]: https://github.com/rjrouquette/radio_astronomy/raw/master/images/antenna_layout.png "Antenna Layout"
+[clk_master]: https://github.com/rjrouquette/radio_astronomy/raw/master/images/master_clock_layout.png "Master Clock Layout"
