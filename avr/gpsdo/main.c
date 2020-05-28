@@ -14,10 +14,16 @@ int main(void) {
 
     // startup complete
     PMIC.CTRL = 0x04u; // enable high-level interrupts
+    sei();
 
     // infinite loop
-    sei();
-    for(;;) { nop(); }
+    //for(;;) { nop(); }
+    for(;;) {
+        if(PORTA.IN & 0x80u)
+            PORTD.OUTSET = 1;
+        else
+            PORTD.OUTCLR = 1;
+    }
 
     return 0;
 }
@@ -44,31 +50,10 @@ void initSysClock(void) {
     CLK.CTRL = CLK_SCLKSEL_XOSC_gc; // Select external clock
     nop4();
 }
-/*
+
 ISR(OSC_OSCF_vect) {
     // reset xmega
-    ledOff();
     cli();
     CCP = 0xD8;
     RST.CTRL = RST_SWRST_bm;
 }
-
-// hsync leading edge
-ISR(PORTE_INT0_vect, ISR_NAKED) {
-    uint8_t buffer[4];
-    buffer[0] = META_PORT.IN;
-    buffer[1] = META_PORT.IN;
-    buffer[2] = META_PORT.IN;
-    buffer[3] = META_PORT.IN;
-    ledToggle();
-
-    ROWSEL_PORT.OUT = buffer[0];
-    ROWSEL_PORT.OUT = buffer[1];
-    PWM_TIMER.CCAL = buffer[2];
-    PWM_TIMER.CCAH = buffer[3];
-    PWM_TIMER.CNTL = 0;
-    PWM_TIMER.CNTH = 0;
-
-    asm volatile("reti");
-}
-*/
