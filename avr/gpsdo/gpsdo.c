@@ -14,6 +14,8 @@
 #define MAX_PPS_DELTA (4) // 64 microseconds
 #define MAX_PLL_INTERVAL (64) // 64 PPS events
 #define SETTLED_VAR (40000) // 25 microseconds RMS
+#define RING_SIZE (64u)
+#define RING_DIV (8u)
 
 volatile uint16_t ppsOffset;
 volatile uint16_t pllFeedback;
@@ -22,9 +24,9 @@ volatile uint16_t pllDivisor;
 
 volatile uint8_t prevPllUpdate;
 volatile uint8_t statsIndex;
-volatile int16_t error[64];
-volatile uint16_t interval[64];
-volatile uint8_t realigned[64];
+volatile int16_t error[RING_SIZE];
+volatile uint16_t interval[RING_SIZE];
+volatile uint8_t realigned[RING_SIZE];
 
 uint8_t pllLocked;
 int32_t pllError;
@@ -210,7 +212,7 @@ inline void onRisingPPS() {
             TCC1.CCB, TCD0.CCB
     );
     interval[statsIndex] = pllInterval;
-    statsIndex = (statsIndex + 1u) & 63u;
+    statsIndex = (statsIndex + 1u) & (RING_SIZE - 1u);
 }
 
 // PPS leading edge
@@ -229,15 +231,15 @@ void updatePLL() {
 
     uint8_t unstable = 0;
     int32_t acc = 0;
-    for(uint8_t i = 0; i < 64; i++) {
+    for(uint8_t i = 0; i < RING_SIZE; i++) {
         acc += error[i];
         unstable |= realigned[i];
     }
-    pllError = acc / 8;
+    pllError = acc / RING_DIV;
 
-    int16_t mean = (int16_t) (acc / 64);
+    int16_t mean = (int16_t) (acc / RING_SIZE);
     acc = 0;
-    for(uint8_t i = 0; i < 64; i++) {
+    for(uint8_t i = 0; i < RING_SIZE; i++) {
         int32_t diff = error[i] - mean;
         acc += diff * diff;
     }
@@ -253,7 +255,7 @@ void updatePLL() {
         pllLocked = 1;
         if(pllInterval < MAX_PLL_INTERVAL) {
             uint16_t match = interval[0];
-            for(uint8_t i = 1; i < 64; i++) {
+            for(uint8_t i = 1; i < RING_SIZE; i++) {
                 if(match != interval[i]) {
                     match = 0;
                     break;
