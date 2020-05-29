@@ -205,11 +205,11 @@ inline void onRisingPPS() {
 
     // update PLL feedback
     if(PORTB.IN & 1u) {
-        if(deltaError <= 0 || currError >= 0) {
+        if(deltaError <= 0) {
             incFeedback();
         }
     } else {
-        if(deltaError >= 0 || currError <= 0) {
+        if(deltaError >= 0) {
             decFeedback();
         }
     }
