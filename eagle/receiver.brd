@@ -2317,10 +2317,10 @@ design rules under a new name.</description>
 <elements>
 <element name="J5" library="SparkFun-Retired" library_urn="urn:adsk.eagle:library:533" package="SMA-EDGE" value="" x="83.185" y="8.89" smashed="yes" rot="R90"/>
 <element name="J6" library="SparkFun-Retired" library_urn="urn:adsk.eagle:library:533" package="SMA-EDGE" value="" x="83.185" y="17.78" smashed="yes" rot="R90"/>
-<element name="L1" library="rcl" library_urn="urn:adsk.eagle:library:334" package="R0402" package3d_urn="urn:adsk.eagle:package:23547/3" value="5.8n" x="76.835" y="20.955" smashed="yes" rot="R90"/>
-<element name="C1" library="rcl" library_urn="urn:adsk.eagle:library:334" package="R0402" package3d_urn="urn:adsk.eagle:package:23547/3" value="2.8p" x="75.565" y="19.685" smashed="yes" rot="R270"/>
-<element name="L2" library="rcl" library_urn="urn:adsk.eagle:library:334" package="R0402" package3d_urn="urn:adsk.eagle:package:23547/3" value="5.8n" x="76.835" y="10.795" smashed="yes" rot="R270"/>
-<element name="C2" library="rcl" library_urn="urn:adsk.eagle:library:334" package="R0402" package3d_urn="urn:adsk.eagle:package:23547/3" value="2.8p" x="75.565" y="12.065" smashed="yes" rot="R270"/>
+<element name="L1" library="rcl" library_urn="urn:adsk.eagle:library:334" package="R0402" package3d_urn="urn:adsk.eagle:package:23547/3" value="7.5n" x="76.835" y="20.955" smashed="yes" rot="R90"/>
+<element name="C1" library="rcl" library_urn="urn:adsk.eagle:library:334" package="R0402" package3d_urn="urn:adsk.eagle:package:23547/3" value="3p" x="75.565" y="19.685" smashed="yes" rot="R270"/>
+<element name="L2" library="rcl" library_urn="urn:adsk.eagle:library:334" package="R0402" package3d_urn="urn:adsk.eagle:package:23547/3" value="7.5n" x="76.835" y="10.795" smashed="yes" rot="R270"/>
+<element name="C2" library="rcl" library_urn="urn:adsk.eagle:library:334" package="R0402" package3d_urn="urn:adsk.eagle:package:23547/3" value="3p" x="75.565" y="12.065" smashed="yes" rot="R270"/>
 <element name="U1" library="ref-packages" library_urn="urn:adsk.eagle:library:338" package="HVQFN32" value="LTC5566" x="69.215" y="15.875" smashed="yes" rot="R180"/>
 <element name="C3" library="rcl" library_urn="urn:adsk.eagle:library:334" package="R0402" package3d_urn="urn:adsk.eagle:package:23547/3" value="" x="70.485" y="11.43" smashed="yes">
 <attribute name="VALUE" x="69.85" y="9.525" size="1.27" layer="27"/>
