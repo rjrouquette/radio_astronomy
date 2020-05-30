@@ -32,4 +32,5 @@ add_executable(
         net/ip_arp_udp_tcp.h
         net/net.h
         net/timeout.h
+        net/ip_config.h
 )
