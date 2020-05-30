@@ -20,4 +20,16 @@ add_executable(
         main.c
         gpsdo.c
         gpsdo.h
-        nop.h)
+        nop.h
+
+        net/dhcp_client.c
+        net/dhcp_client.h
+        net/dnslkup.c
+        net/dnslkup.h
+        net/enc28j60.c
+        net/enc28j60.h
+        net/ip_arp_udp_tcp.c
+        net/ip_arp_udp_tcp.h
+        net/net.h
+        net/timeout.h
+)
