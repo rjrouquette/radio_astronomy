@@ -12,7 +12,7 @@ set(CMAKE_CXX_COMPILER_WORKS 1)
 
 project("gpsdo")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -Wall -mmcu=atxmega16a4u -D__AVR_ATxmega16A4U__ -DF_CPU=2000000 -DARCH_XMEGA")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -Wall -mmcu=atxmega16a4u -D__AVR_ATxmega16A4U__ -DF_CPU=25000000 -DARCH_XMEGA")
 
 add_executable(
         gpsdo
@@ -20,7 +20,10 @@ add_executable(
         main.c
         gpsdo.c
         gpsdo.h
+        leds.h
         nop.h
+        webserver.c
+        webserver.h
 
         net/dhcp_client.c
         net/dhcp_client.h
@@ -31,6 +34,7 @@ add_executable(
         net/ip_arp_udp_tcp.c
         net/ip_arp_udp_tcp.h
         net/net.h
-        net/timeout.h
         net/ip_config.h
+        webserver.c
+        webserver.h
 )

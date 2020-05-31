@@ -6,10 +6,7 @@
 #include <avr/interrupt.h>
 #include "gpsdo.h"
 #include "nop.h"
-
-#define LED_PORT (PORTD)
-#define LED0 (1u)
-#define LED1 (2u)
+#include "leds.h"
 
 // loop tuning
 #define MAX_PPS_DELTA (2) // 32 microseconds
@@ -46,14 +43,6 @@ int32_t pllErrorVar;
 
 void setPpsOffset(uint16_t offset);
 
-inline void ledOn(uint8_t mask) {
-    LED_PORT.OUTSET = mask;
-}
-
-inline void ledOff(uint8_t mask) {
-    LED_PORT.OUTCLR = mask;
-}
-
 void initGPSDO() {
     ppsOffset = 0;
     pllFeedback = 0;
@@ -63,11 +52,6 @@ void initGPSDO() {
     pllError = 0;
     pllErrorVar = 0;
     prevPllError = 0;
-
-    // init LEDs
-    LED_PORT.DIRSET = LED0 | LED1;
-    ledOff(LED0);
-    ledOff(LED1);
 
     // init DAC
     DACB.CTRLC = 0x08u; // AVCC Ref
@@ -194,6 +178,9 @@ inline void alignPPS() {
 }
 
 inline void onRisingPPS() {
+    // longer led pulse when locked
+    if(pllLocked) ledOn(LED0);
+
     // check if PPS was realigned
     alignPPS();
 
@@ -230,8 +217,6 @@ void updatePLL() {
     prevPllUpdate = statsIndex;
 
     ledOn(LED0);
-    if(pllLocked)
-        ledOn(LED1);
 
     pllLocked = 1;
     int32_t acc = 0;
@@ -249,7 +234,6 @@ void updatePLL() {
     }
     pllErrorVar = acc;
 
-    ledOff(LED0);
     if((!pllLocked) || (pllErrorVar > SETTLED_VAR))
-        ledOff(LED1);
+        ledOff(LED0);
 }

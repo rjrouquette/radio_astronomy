@@ -13,55 +13,19 @@
  * Chip type           : ATMEGA88/ATMEGA168/ATMEGA328/ATMEGA644 with ENC28J60
  *********************************************/
 #include <avr/io.h>
+#include <util/delay.h>
 #include "ip_config.h"
 #include "enc28j60.h"
-//
-#ifndef F_CPU
-#define F_CPU 12500000UL  // 12.5 MHz
-//#else 
-//#warning "F_CPU was already defined" 
-#endif
-
-#ifndef ALIBC_OLD
-
-#include <util/delay_basic.h>
-
-#else
-#include <avr/delay.h>
-#endif
-
+#include "../leds.h"
 
 static uint8_t Enc28j60Bank;
 static int16_t gNextPacketPtr;
-/*
-#define ENC28J60_CONTROL_PORT   PORTB
-#define ENC28J60_CONTROL_DDR    DDRB
-#if defined(__AVR_ATmega88__) || defined(__AVR_ATmega88P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega168P__) || defined(__AVR_ATmega328P__) 
-#define ENC28J60_CONTROL_CS PORTB2
-#define ENC28J60_CONTROL_SO PORTB4
-#define ENC28J60_CONTROL_SI PORTB3
-#define ENC28J60_CONTROL_SCK PORTB5
-#endif
-#if defined(__AVR_ATmega644__)||defined(__AVR_ATmega644P__)
-#define ENC28J60_CONTROL_CS PORTB4
-#define ENC28J60_CONTROL_SO PORTB6
-#define ENC28J60_CONTROL_SI PORTB5
-#define ENC28J60_CONTROL_SCK PORTB7
-#endif
-// set CS to 0 = active
-#define CSACTIVE ENC28J60_CONTROL_PORT&=~(1<<ENC28J60_CONTROL_CS)
-// set CS to 1 = passive
-#define CSPASSIVE ENC28J60_CONTROL_PORT|=(1<<ENC28J60_CONTROL_CS)
-//
-#define waitspi() while(!(SPSR&(1<<SPIF)))
-*/
 
 #define PIN_CS (0x10u)
-
 #define SPDR SPID.DATA
 #define CSACTIVE  { PORTD.OUTCLR = PIN_CS; }
 #define CSPASSIVE { PORTD.OUTSET = PIN_CS; }
-#define waitspi() while(!(SPID.STATUS & (uint8_t)SPI_IF_bm))
+#define waitspi() { while(!(SPID.STATUS & 0x80u)) LED_PORT.OUTTGL = LED1; }
 
 uint8_t enc28j60ReadOp(uint8_t op, uint8_t address) {
     CSACTIVE;
@@ -169,7 +133,7 @@ void enc28j60PhyWrite(uint8_t address, uint16_t data) {
     enc28j60Write(MIWRH, data >> 8);
     // wait until the PHY write completes
     while (enc28j60Read(MISTAT) & MISTAT_BUSY) {
-        _delay_loop_1(40); // 10us
+        _delay_us(10); // 10us
     }
 }
 
@@ -182,13 +146,14 @@ void enc28j60Init(uint8_t *macaddr) {
     // extra lines not used by driver
     PORTE.DIRSET = PIN3_bm;
     PORTE.DIRCLR = PIN2_bm;
+    PORTE.OUTCLR = PIN3_bm;
     PORTE.OUTSET = PIN3_bm;
 
     // initialize I/O
     // ss as output:
     //ENC28J60_CONTROL_DDR |= 1 << ENC28J60_CONTROL_CS;
-    PORTD.DIRSET = PIN7_bm | PIN5_bm | PIN4_bm;
-    PORTD.DIRCLR = PIN4_bm;
+    PORTD.DIRSET = 0xb0u;
+    PORTD.DIRCLR = 0x40u;
     CSPASSIVE; // ss=0
     //
     //ENC28J60_CONTROL_DDR |= 1 << ENC28J60_CONTROL_SI | 1 << ENC28J60_CONTROL_SCK; // mosi, sck output
@@ -198,13 +163,10 @@ void enc28j60Init(uint8_t *macaddr) {
     //ENC28J60_CONTROL_PORT &= ~(1 << ENC28J60_CONTROL_SCK); // SCK low
     //
     // initialize SPI interface
-    // master mode and Fosc/2 clock:
-    //SPCR = (1 << SPE) | (1 << MSTR);
-    //SPSR |= (1 << SPI2X);
-    SPID.CTRL = SPI_ENABLE_bm | SPI_CLK2X_bm | SPI_MASTER_bm | SPI_MODE_0_gc | SPI_PRESCALER_DIV4_gc;
+    SPID.CTRL = 0xd0u;
     // perform system reset
     enc28j60WriteOp(ENC28J60_SOFT_RESET, 0, ENC28J60_SOFT_RESET);
-    _delay_loop_2(0); // 20ms
+    _delay_ms(20); // 20ms
     // check CLKRDY bit to see if reset is complete
     // The CLKRDY does not work. See Rev. B4 Silicon Errata point. Just wait.
     //while(!(enc28j60Read(ESTAT) & ESTAT_CLKRDY));
@@ -330,7 +292,7 @@ void enc28j60PacketSend(uint16_t len, uint8_t *packet) {
         enc28j60WriteOp(ENC28J60_BIT_FIELD_SET, ECON1, ECON1_TXRST);
         enc28j60WriteOp(ENC28J60_BIT_FIELD_CLR, ECON1, ECON1_TXRST);
         enc28j60WriteOp(ENC28J60_BIT_FIELD_CLR, EIR, EIR_TXERIF);
-        _delay_loop_2(30000); // 10ms
+        _delay_ms(10); // 10ms
     }
     // Set the write pointer to start of transmit buffer area
     enc28j60Write(EWRPTL, TXSTART_INIT & 0xFF);

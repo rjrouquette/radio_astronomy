@@ -3,14 +3,19 @@
 #include <stdio.h>
 
 #include "gpsdo.h"
+#include "leds.h"
 #include "nop.h"
+#include "webserver.h"
 
 void initSysClock(void);
 
 int main(void) {
     cli();
+    initLEDs();
     initSysClock();
     initGPSDO();
+    initWebserver();
+    ledOn(LED1);
 
     // startup complete
     PMIC.CTRL = 0x04u; // enable high-level interrupts
@@ -19,6 +24,7 @@ int main(void) {
     // infinite loop
     for(;;) {
         updatePLL();
+        updateWebserver();
     }
 
     return 0;
