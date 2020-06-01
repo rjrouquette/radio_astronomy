@@ -9,8 +9,8 @@ void initGPSDO();
 
 extern volatile uint8_t pllSec;
 uint8_t isPllLocked();
-int32_t getPllError();
-int32_t getPllErrorVar();
+float getPllError();
+float getPllErrorRms();
 
 
 #endif //RGB_MATRIX_AVR_GPSDO_H

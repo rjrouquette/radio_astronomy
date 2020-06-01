@@ -4,6 +4,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <math.h>
 #include "gpsdo.h"
 #include "nop.h"
 #include "leds.h"
@@ -40,8 +41,8 @@ volatile int16_t error[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
 
 uint8_t pllLocked;
-int32_t pllError;
-int32_t pllErrorVar;
+float pllError;
+float pllErrorRms;
 
 
 void setPpsOffset(uint16_t offset);
@@ -53,7 +54,7 @@ void initGPSDO() {
     prevPllUpdate = 0;
     pllLocked = 0;
     pllError = 0;
-    pllErrorVar = 0;
+    pllErrorRms = 0;
     prevPllError = 0;
 
     // init DAC
@@ -108,12 +109,12 @@ uint8_t isPllLocked() {
     return pllLocked;
 }
 
-int32_t getPllError() {
+float getPllError() {
     return pllError;
 }
 
-int32_t getPllErrorVar() {
-    return pllErrorVar;
+float getPllErrorRms() {
+    return pllErrorRms;
 }
 
 void setPpsOffset(uint16_t offset) {
@@ -219,7 +220,9 @@ inline void onRisingPPS() {
         acc += error[i];
         pllLocked &= (realigned[i] ^ 1u);
     }
-    pllError = acc / RING_DIV;
+    pllError = acc;
+    pllError /= RING_SIZE;
+    pllError *= 40e-9f;
 
     int16_t mean = (int16_t) (acc / RING_SIZE);
     acc = 0;
@@ -227,10 +230,13 @@ inline void onRisingPPS() {
         int32_t diff = error[i] - mean;
         acc += diff * diff;
     }
-    pllErrorVar = acc;
+    pllErrorRms = acc;
+    pllErrorRms /= RING_SIZE;
+    pllErrorRms = sqrtf(pllErrorRms);
+    pllErrorRms *= 40e-9f;
 
     // determine if loop has settled
-    if((!pllLocked) || (pllErrorVar > SETTLED_VAR))
+    if((!pllLocked) || (pllErrorRms > SETTLED_VAR))
         ledOff(LED0);
 
     // increment pll second counter (exposed for external timekeeping)

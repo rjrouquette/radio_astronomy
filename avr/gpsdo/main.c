@@ -51,12 +51,8 @@ uint16_t http200ok(void) {
 uint16_t print_webpage(uint8_t *buf) {
     // snapshot pll status
     uint8_t locked = isPllLocked();
-    int32_t error = getPllError();
-    int32_t errVar = getPllErrorVar();
-
-    int8_t frac = error % 8;
-    error = error / 8;
-    if(frac < 0) frac = -frac;
+    float error = getPllError();
+    float errRms = getPllErrorRms();
 
     char temp[16];
     uint16_t plen;
@@ -67,14 +63,14 @@ uint16_t print_webpage(uint8_t *buf) {
     plen = fill_tcp_data(buf, plen, temp);
 
     plen = fill_tcp_data_p(buf, plen, PSTR("\nPLL Error: "));
-    sprintf(temp, "%d", error * 5);
+    sprintf(temp, "%f", error);
     plen = fill_tcp_data(buf, plen, temp);
 
-    plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nPLL Error RMS: "));
-    sprintf(temp, "%d", (int32_t) sqrtf(errVar) * 5);
+    plen = fill_tcp_data_p(buf, plen, PSTR(" s\nPLL Error RMS: "));
+    sprintf(temp, "%f", errRms);
     plen = fill_tcp_data(buf, plen, temp);
 
-    plen = fill_tcp_data(buf, plen, " ns\n");
+    plen = fill_tcp_data(buf, plen, " s\n");
     return plen;
 }
 
