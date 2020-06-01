@@ -79,7 +79,7 @@ void initWebserver() {
     // 0x476 is PHLCON LEDA=links status, LEDB=receive/transmit
     // enc28j60PhyWrite(PHLCON,0b0000 0100 0111 01 10);
     enc28j60PhyWrite(PHLCON,0x476);
-
+/*
     LEDON;
     // DHCP handling. Get the initial IP
     rval=0;
@@ -104,7 +104,7 @@ void initWebserver() {
         packetloop_arp_icmp_tcp(buf,plen);
     }
     LEDOFF;
-
+*/
 }
 
 void updateWebserver() {
@@ -121,12 +121,12 @@ void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t ref
 }
 
 // one-second interval
-ISR(TCC0_OVF_vect) {
+ISR(TCC0_OVF_vect, ISR_NOBLOCK) {
     sec++;
     gsec++;
     if (sec > 5){
         sec = 0;
-        //dhcp_6sec_tick();
+        dhcp_6sec_tick();
     }
     LED_PORT.OUTTGL = LED1;
 }

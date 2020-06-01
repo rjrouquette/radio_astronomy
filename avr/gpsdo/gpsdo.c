@@ -234,6 +234,6 @@ inline void onRisingPPS() {
 }
 
 // PPS leading edge
-ISR(TCD0_CCA_vect) {
+ISR(TCD0_CCA_vect, ISR_BLOCK) {
     onRisingPPS();
 }
