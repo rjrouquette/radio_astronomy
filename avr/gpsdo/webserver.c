@@ -120,12 +120,11 @@ void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t ref
 }
 
 // one-second interval
-ISR(TCC0_OVF_vect, ISR_NOBLOCK) {
+ISR(TCC0_OVF_vect, ISR_BLOCK) {
     sec++;
     gsec++;
     if (sec > 5){
         sec = 0;
         dhcp_6sec_tick();
     }
-    LED_PORT.OUTTGL = LED1;
 }
