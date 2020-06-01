@@ -51,7 +51,7 @@ uint16_t http200ok(void) {
 uint16_t print_webpage(uint8_t *buf) {
     uint16_t plen;
     plen = http200ok();
-    plen += sprintf(buf+plen, PSTR("PLL Error: %d\n"), getPllError());
+    plen += sprintf_P(buf+plen, PSTR("PLL Error: %d\n"), getPllError());
     return(plen);
 }
 
