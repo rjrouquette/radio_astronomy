@@ -121,7 +121,7 @@ void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t ref
 }
 
 // one-second interval
-ISR(TCC0_OVF_vect, ISR_NOBLOCK) {
+ISR(TCC0_OVF_vect) {
     sec++;
     gsec++;
     if (sec > 5){

@@ -233,7 +233,7 @@ inline void updatePll() {
 }
 
 // PPS leading edge
-ISR(TCD0_CCA_vect, ISR_BLOCK) {
+ISR(TCD0_CCA_vect) {
     onRisingPPS();
     updatePll();
 }
