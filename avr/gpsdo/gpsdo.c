@@ -216,11 +216,7 @@ ISR(TCD0_CCA_vect, ISR_BLOCK) {
     onRisingPPS();
 }
 
-ISR(TCD0_OVF_vect, ISR_BLOCK) {
-    if(statsIndex == prevPllUpdate)
-        return;
-    prevPllUpdate = statsIndex;
-
+ISR(TCD0_OVF_vect, ISR_NOBLOCK) {
     ledOn(LED0);
 
     pllLocked = 1;
