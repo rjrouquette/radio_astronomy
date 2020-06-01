@@ -7,6 +7,7 @@
 #include "gpsdo.h"
 #include "nop.h"
 #include "leds.h"
+#include "net/dhcp_client.h"
 
 // loop tuning
 #define MAX_PPS_DELTA (2) // 32 microseconds
@@ -27,6 +28,8 @@
 #define MOD_ALL_HI ( 12499999)
 #define MOD_ALL_LO (-12500000)
 
+volatile uint8_t dhcpSec;
+volatile uint8_t pllSec;
 volatile uint16_t ppsOffset;
 volatile uint16_t pllFeedback;
 
@@ -84,8 +87,6 @@ void initGPSDO() {
     TCC0.CTRLB = 0x33u;
     TCC0.PER = DIV_MSB - 1u;
     setPpsOffset(0);
-    // lowest priority overflow interrupt
-    TCC0.INTCTRLA = 0x01u;
 
     // PPS Capture
     TCD0.CTRLA = 0x0fu;
@@ -231,6 +232,15 @@ inline void onRisingPPS() {
     // determine if loop has settled
     if((!pllLocked) || (pllErrorVar > SETTLED_VAR))
         ledOff(LED0);
+
+    // increment pll second counter
+    pllSec++;
+
+    // increment dhcp counter
+    if(++dhcpSec > 5) {
+        dhcpSec = 0;
+        dhcp_6sec_tick();
+    }
 }
 
 // PPS leading edge
