@@ -3230,7 +3230,7 @@ design rules under a new name.</description>
 <wire x1="36.195" y1="38.1" x2="38.625" y2="38.1" width="0.127" layer="1"/>
 <wire x1="38.625" y1="38.1" x2="38.65" y2="38.125" width="0.127" layer="1"/>
 </signal>
-<signal name="S$45">
+<signal name="TPIN+">
 <contactref element="U4" pad="13"/>
 <contactref element="J1" pad="4"/>
 <contactref element="R7" pad="1"/>
@@ -3239,7 +3239,7 @@ design rules under a new name.</description>
 <wire x1="20.555" y1="37.065" x2="19.685" y2="36.195" width="0.254" layer="1"/>
 <wire x1="19.685" y1="36.195" x2="14.905" y2="36.195" width="0.254" layer="1"/>
 </signal>
-<signal name="S$46">
+<signal name="TPIN-">
 <contactref element="U4" pad="12"/>
 <contactref element="J1" pad="6"/>
 <contactref element="R8" pad="1"/>
@@ -3248,7 +3248,7 @@ design rules under a new name.</description>
 <wire x1="21.205" y1="36.445" x2="18.415" y2="33.655" width="0.254" layer="1"/>
 <wire x1="18.415" y1="33.655" x2="14.905" y2="33.655" width="0.254" layer="1"/>
 </signal>
-<signal name="S$47">
+<signal name="TPOUT+">
 <contactref element="J1" pad="1"/>
 <contactref element="R9" pad="1"/>
 <wire x1="12.365" y1="40.005" x2="11.73" y2="39.37" width="0.635" layer="16"/>
@@ -3261,7 +3261,7 @@ design rules under a new name.</description>
 <wire x1="21.205" y1="31.935" x2="21.205" y2="30.984" width="0.254" layer="1"/>
 <wire x1="21.205" y1="30.984" x2="19.431" y2="29.21" width="0.254" layer="1"/>
 </signal>
-<signal name="S$48">
+<signal name="TPOUT-">
 <contactref element="J1" pad="3"/>
 <contactref element="R10" pad="1"/>
 <wire x1="12.365" y1="37.465" x2="11.73" y2="36.83" width="0.635" layer="16"/>
@@ -3295,7 +3295,7 @@ design rules under a new name.</description>
 <wire x1="14.92" y1="45.085" x2="14.92" y2="38.75" width="0.635" layer="1"/>
 <wire x1="14.92" y1="38.75" x2="14.905" y2="38.735" width="0.635" layer="1"/>
 </signal>
-<signal name="S$53">
+<signal name="RBIAS">
 <contactref element="U4" pad="14"/>
 <contactref element="R16" pad="1"/>
 <wire x1="19.905" y1="39.185" x2="19.905" y2="40.735" width="0.4064" layer="1"/>
