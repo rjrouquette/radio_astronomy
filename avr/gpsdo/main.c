@@ -97,7 +97,7 @@ int main(void) {
 
     // pause for a bit
     _delay_ms(100);
-
+/*
     LEDON;
     // we have a gateway.
     // find the mac address of the gateway (e.g your dsl router).
@@ -108,7 +108,7 @@ int main(void) {
         packetloop_arp_icmp_tcp(buf,plen);
     }
     LEDOFF;
-
+*/
     // infinite loop
     for(;;) {
         plen=enc28j60PacketReceive(BUFFER_SIZE, buf);
