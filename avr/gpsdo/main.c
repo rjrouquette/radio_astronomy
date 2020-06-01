@@ -14,7 +14,7 @@ int main(void) {
     initLEDs();
     initSysClock();
     initGPSDO();
-    initWebserver();
+    //initWebserver();
 
     // startup complete
     PMIC.CTRL = 0x07u; // enable all interrupts
@@ -22,7 +22,7 @@ int main(void) {
 
     // infinite loop
     for(;;) {
-        updateWebserver();
+        //updateWebserver();
     }
 
     return 0;

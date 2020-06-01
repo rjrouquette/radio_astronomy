@@ -126,6 +126,7 @@ ISR(TCC0_OVF_vect, ISR_NOBLOCK) {
     gsec++;
     if (sec > 5){
         sec = 0;
-        dhcp_6sec_tick();
+        //dhcp_6sec_tick();
     }
+    LED_PORT.OUTTGL = LED1;
 }
