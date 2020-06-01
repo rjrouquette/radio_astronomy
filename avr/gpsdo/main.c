@@ -32,7 +32,7 @@ static uint8_t web_client_sendok=0;
 static int8_t processing_state=0;
 
 void initSysClock(void);
-void appendSimpleHash(uint8_t byte, uint32_t *hash);
+uint32_t appendSimpleHash(uint8_t byte, uint32_t hash);
 void initMacAddress();
 void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t reference_number,uint8_t *mac);
 
@@ -125,8 +125,8 @@ ISR(OSC_OSCF_vect) {
     RST.CTRL = RST_SWRST_bm;
 }
 
-void appendSimpleHash(uint8_t byte, uint32_t *hash) {
-    (*hash) = ((*hash) << 5u) + (*hash) + byte;
+uint32_t appendSimpleHash(uint8_t byte, uint32_t hash) {
+    return ((hash) << 5u) + (hash) + byte;
 }
 
 uint8_t readProdByte(volatile uint8_t *offset) {
@@ -139,17 +139,17 @@ uint8_t readProdByte(volatile uint8_t *offset) {
 void initMacAddress() {
     // create hash of serial number
     uint32_t hash = 5381;
-    appendSimpleHash(readProdByte(&PRODSIGNATURES_LOTNUM0), &hash);
-    appendSimpleHash(PRODSIGNATURES_LOTNUM1, &hash);
-    appendSimpleHash(PRODSIGNATURES_LOTNUM2, &hash);
-    appendSimpleHash(PRODSIGNATURES_LOTNUM3, &hash);
-    appendSimpleHash(PRODSIGNATURES_LOTNUM4, &hash);
-    appendSimpleHash(PRODSIGNATURES_LOTNUM5, &hash);
-    appendSimpleHash(PRODSIGNATURES_WAFNUM, &hash);
-    appendSimpleHash(PRODSIGNATURES_COORDX0, &hash);
-    appendSimpleHash(PRODSIGNATURES_COORDX1, &hash);
-    appendSimpleHash(PRODSIGNATURES_COORDY0, &hash);
-    appendSimpleHash(PRODSIGNATURES_COORDY1, &hash);
+    hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_LOTNUM0), hash);
+    hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_LOTNUM1), hash);
+    hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_LOTNUM2), hash);
+    hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_LOTNUM3), hash);
+    hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_LOTNUM4), hash);
+    hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_LOTNUM5), hash);
+    hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_WAFNUM), hash);
+    hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_COORDX0), hash);
+    hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_COORDX1), hash);
+    hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_COORDY0), hash);
+    hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_COORDY1), hash);
 
     // use lower 24-bits as lower 24-bits of MAC address
     macAddr[0] = (hash >> 0u) & 0xffu;
