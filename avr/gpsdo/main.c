@@ -1,6 +1,9 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <util/delay.h>
 
 #include "gpsdo.h"
 #include "leds.h"
@@ -35,6 +38,22 @@ void initSysClock(void);
 uint32_t appendSimpleHash(uint8_t byte, uint32_t hash);
 void initMacAddress();
 void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t reference_number,uint8_t *mac);
+
+uint16_t http200ok(void)
+{
+    return(fill_tcp_data_p(buf,0,PSTR("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nPragma: no-cache\r\n\r\n")));
+}
+
+// prepare the webpage by writing the data to the tcp send buffer
+uint16_t print_webpage(uint8_t *buf)
+{
+    uint16_t plen;
+    plen=http200ok();
+    plen=fill_tcp_data_p(buf,plen,PSTR("<pre>"));
+    plen=fill_tcp_data_p(buf,plen,PSTR("Hi!\nYour web server works great."));
+    plen=fill_tcp_data_p(buf,plen,PSTR("</pre>\n"));
+    return(plen);
+}
 
 int main(void) {
     cli();
@@ -75,7 +94,10 @@ int main(void) {
     dhcp_get_my_ip(myip,netmask,gwip);
     client_ifconfig(myip,netmask);
     LEDOFF;
-/*
+
+    // pause for a bit
+    _delay_ms(100);
+
     LEDON;
     // we have a gateway.
     // find the mac address of the gateway (e.g your dsl router).
@@ -86,10 +108,43 @@ int main(void) {
         packetloop_arp_icmp_tcp(buf,plen);
     }
     LEDOFF;
-*/
+
     // infinite loop
     for(;;) {
-        nop();
+        plen=enc28j60PacketReceive(BUFFER_SIZE, buf);
+        buf[BUFFER_SIZE]='\0'; // http is an ascii protocol. Make sure we have a string terminator.
+
+        // DHCP renew IP:
+        plen=packetloop_dhcp_renewhandler(buf,plen); // for this to work you have to call dhcp_6sec_tick() every 6 sec
+        dat_p=packetloop_arp_icmp_tcp(buf,plen);
+
+
+        // dat_p will be unequal to zero if there is a valid  http get
+        if(dat_p==0){
+            // no http request
+            if (enc28j60linkup()){
+                LEDON;
+            }else{
+                LEDOFF;
+            }
+            continue;
+        }
+        // tcp port 80 begin
+        if (strncmp("GET ",(char *)&(buf[dat_p]),4)!=0) {
+            // head, post and other methods:
+            dat_p=http200ok();
+            dat_p=fill_tcp_data_p(buf,dat_p,PSTR("<h1>200 OK</h1>"));
+            www_server_reply(buf,dat_p);
+        }
+        // just one web page in the "root directory" of the web server
+        else if (strncmp("/ ",(char *)&(buf[dat_p+4]),2)==0) {
+            dat_p=print_webpage(buf);
+            www_server_reply(buf,dat_p);
+        }
+        else {
+            dat_p=fill_tcp_data_p(buf,0,PSTR("HTTP/1.0 401 Unauthorized\r\nContent-Type: text/html\r\n\r\n<h1>401 Unauthorized</h1>"));
+            www_server_reply(buf,dat_p);
+        }
     }
 
     return 0;
@@ -155,4 +210,13 @@ void initMacAddress() {
     macAddr[5] = (hash >> 0u) & 0xffu;
     macAddr[4] = (hash >> 8u) & 0xffu;
     macAddr[3] = (hash >> 16u) & 0xffu;
+}
+
+// the __attribute__((unused)) is a gcc compiler directive to avoid warnings about unsed variables.
+void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t reference_number,uint8_t *mac){
+    uint8_t i=0;
+    if (reference_number==TRANS_NUM_GWMAC){
+        // copy mac address over:
+        while(i<6){gwmac[i]=mac[i];i++;}
+    }
 }
