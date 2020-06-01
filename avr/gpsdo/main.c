@@ -51,9 +51,9 @@ uint16_t http200ok(void) {
 uint16_t print_webpage(uint8_t *buf) {
     uint16_t plen;
     plen = http200ok();
-    plen += sprintf_P((char * ) buf + plen, PSTR("PLL Locked: %d\n\0"), isPllLocked());
-    plen += sprintf_P((char * ) buf + plen, PSTR("PLL Error: %ld\n\0"), getPllError());
-    plen += sprintf_P((char * ) buf + plen, PSTR("PLL Error RMS: %ld\n\0"), getPllErrorVar());
+    plen += sprintf_P((char * ) buf + plen, PSTR("PLL Locked: %d\n"), isPllLocked());
+    plen += sprintf_P((char * ) buf + plen, PSTR("PLL Error: %d\n"), getPllError());
+    plen += sprintf_P((char * ) buf + plen, PSTR("PLL Error RMS: %d\n"), getPllErrorVar());
     return plen;
 }
 
