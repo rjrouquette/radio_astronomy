@@ -52,7 +52,7 @@ int main(void) {
     uint8_t i;
 
     // init ethernet controller
-    //initMacAddress();
+    initMacAddress();
     enc28j60Init(macAddr);
 
     /* Magjack leds configuration, see enc28j60 datasheet, page 11 */
@@ -129,7 +129,7 @@ uint32_t appendSimpleHash(uint8_t byte, uint32_t hash) {
     return ((hash) << 5u) + (hash) + byte;
 }
 
-uint8_t readProdByte(volatile uint8_t *offset) {
+uint8_t readProdByte(const volatile uint8_t *offset) {
     NVM.CMD = NVM_CMD_READ_CALIB_ROW_gc;
     uint8_t temp = pgm_read_byte(offset);
     NVM.CMD = NVM_CMD_NO_OPERATION_gc;
