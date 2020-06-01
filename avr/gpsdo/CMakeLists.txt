@@ -22,8 +22,6 @@ add_executable(
         gpsdo.h
         leds.h
         nop.h
-        webserver.c
-        webserver.h
 
         net/dhcp_client.c
         net/dhcp_client.h
@@ -35,6 +33,4 @@ add_executable(
         net/ip_arp_udp_tcp.h
         net/net.h
         net/ip_config.h
-        webserver.c
-        webserver.h
 )

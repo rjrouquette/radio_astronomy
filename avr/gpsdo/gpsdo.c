@@ -233,7 +233,7 @@ inline void onRisingPPS() {
     if((!pllLocked) || (pllErrorVar > SETTLED_VAR))
         ledOff(LED0);
 
-    // increment pll second counter
+    // increment pll second counter (exposed for external timekeeping)
     pllSec++;
 
     // increment dhcp counter
