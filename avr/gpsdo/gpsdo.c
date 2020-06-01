@@ -91,6 +91,8 @@ void initGPSDO() {
     TCD0.CTRLA = 0x0fu;
     TCD0.CTRLB = 0x30u;
     TCD0.CTRLD = 0x3du;
+    // mid priority overflow interrupt
+    TCD0.INTCTRLA = 0x02u;
     // highest priority capture interrupt
     TCD0.INTCTRLB = 0x03u;
     TCD0.PER = DIV_MSB - 1u;
@@ -214,7 +216,7 @@ ISR(TCD0_CCA_vect, ISR_BLOCK) {
     onRisingPPS();
 }
 
-void updatePLL() {
+ISR(TCD0_OVF_vect, ISR_BLOCK) {
     if(statsIndex == prevPllUpdate)
         return;
     prevPllUpdate = statsIndex;

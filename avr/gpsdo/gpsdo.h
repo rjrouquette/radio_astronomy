@@ -6,7 +6,6 @@
 #define RGB_MATRIX_AVR_GPSDO_H
 
 void initGPSDO();
-void updatePLL();
 
 uint8_t isPllLocked();
 int32_t getPllError();

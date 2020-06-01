@@ -17,12 +17,11 @@ int main(void) {
     initWebserver();
 
     // startup complete
-    PMIC.CTRL = 0x05u; // enable high-level and low-level interrupts
+    PMIC.CTRL = 0x07u; // enable all interrupts
     sei();
 
     // infinite loop
     for(;;) {
-        updatePLL();
         updateWebserver();
     }
 
