@@ -39,19 +39,19 @@ uint32_t appendSimpleHash(uint8_t byte, uint32_t hash);
 void initMacAddress();
 void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t reference_number,uint8_t *mac);
 
-uint16_t http200ok(void)
-{
-    return(fill_tcp_data_p(buf,0,PSTR("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nPragma: no-cache\r\n\r\n")));
+uint16_t http200ok(void) {
+    return fill_tcp_data_p(
+            buf,
+            0,
+            PSTR("HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nPragma: no-cache\r\n\r\n")
+    );
 }
 
 // prepare the webpage by writing the data to the tcp send buffer
-uint16_t print_webpage(uint8_t *buf)
-{
+uint16_t print_webpage(uint8_t *buf) {
     uint16_t plen;
-    plen=http200ok();
-    plen=fill_tcp_data_p(buf,plen,PSTR("<pre>"));
-    plen=fill_tcp_data_p(buf,plen,PSTR("Hi!\nYour web server works great."));
-    plen=fill_tcp_data_p(buf,plen,PSTR("</pre>\n"));
+    plen = http200ok();
+    plen += sprintf(buf+plen, PSTR("PLL Error: %d\n"), getPllError());
     return(plen);
 }
 
