@@ -13,8 +13,8 @@
 #define LEDOFF ledOff(LED1)
 
 // interface MAC address
-//uint8_t macAddr[6] = {0x54, 0x55, 0x58, 0x10, 0x00, 0x29};
-uint8_t macAddr[6] = { 0xa0, 0x36, 0x9f, 0x00, 0x00, 0x00 };
+uint8_t macAddr[6] = {0x54, 0x55, 0x58, 0x10, 0x00, 0x29};
+//uint8_t macAddr[6] = { 0xa0, 0x36, 0x9f, 0x00, 0x00, 0x00 };
 // My own IP (DHCP will provide a value for it):
 static uint8_t myip[4]={0,0,0,0};
 // Default gateway (DHCP will provide a value for it):
@@ -52,7 +52,7 @@ int main(void) {
     uint8_t i;
 
     // init ethernet controller
-    initMacAddress();
+    //initMacAddress();
     enc28j60Init(macAddr);
 
     /* Magjack leds configuration, see enc28j60 datasheet, page 11 */
