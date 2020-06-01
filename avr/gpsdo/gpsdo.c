@@ -84,11 +84,14 @@ void initGPSDO() {
     TCC0.CTRLB = 0x33u;
     TCC0.PER = DIV_MSB - 1u;
     setPpsOffset(0);
+    // lowest priority overflow interrupt
+    TCC0.INTCTRLA = 0x01u;
 
     // PPS Capture
     TCD0.CTRLA = 0x0fu;
     TCD0.CTRLB = 0x30u;
     TCD0.CTRLD = 0x3du;
+    // highest priority capture interrupt
     TCD0.INTCTRLB = 0x03u;
     TCD0.PER = DIV_MSB - 1u;
     TCD0.CCA = 0u;

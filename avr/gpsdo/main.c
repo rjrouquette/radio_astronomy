@@ -17,7 +17,7 @@ int main(void) {
     initWebserver();
 
     // startup complete
-    PMIC.CTRL = 0x04u; // enable high-level interrupts
+    PMIC.CTRL = 0x05u; // enable high-level and low-level interrupts
     sei();
 
     // infinite loop

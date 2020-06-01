@@ -3,6 +3,7 @@
 //
 
 #include <avr/io.h>
+#include <avr/interrupt.h>
 
 #include "leds.h"
 #include "webserver.h"
@@ -106,22 +107,7 @@ void initWebserver() {
 
 }
 
-void updateSecond() {
-    // TCC0 overflow interrupt occurs every second
-    if(!(TCC0.INTFLAGS & 1u)) return;
-    // clear interrupt flag
-    TCC0.INTFLAGS = 1u;
-
-    sec++;
-    gsec++;
-    if (sec>5){
-        sec=0;
-        dhcp_6sec_tick();
-    }
-}
-
 void updateWebserver() {
-    updateSecond();
 
 }
 
@@ -131,5 +117,15 @@ void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t ref
     if (reference_number==TRANS_NUM_GWMAC){
         // copy mac address over:
         while(i<6){gwmac[i]=mac[i];i++;}
+    }
+}
+
+// one-second interval
+ISR(TCC0_OVF_vect, ISR_NOBLOCK) {
+    sec++;
+    gsec++;
+    if (sec > 5){
+        sec = 0;
+        dhcp_6sec_tick();
     }
 }
