@@ -15,7 +15,6 @@ int main(void) {
     initSysClock();
     initGPSDO();
     initWebserver();
-    ledOn(LED1);
 
     // startup complete
     PMIC.CTRL = 0x04u; // enable high-level interrupts

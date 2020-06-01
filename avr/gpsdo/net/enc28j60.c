@@ -16,7 +16,7 @@
 #include <util/delay.h>
 #include "ip_config.h"
 #include "enc28j60.h"
-#include "../leds.h"
+#include "../nop.h"
 
 static uint8_t Enc28j60Bank;
 static int16_t gNextPacketPtr;
@@ -25,7 +25,7 @@ static int16_t gNextPacketPtr;
 #define SPDR SPID.DATA
 #define CSACTIVE  { PORTD.OUTCLR = PIN_CS; }
 #define CSPASSIVE { PORTD.OUTSET = PIN_CS; }
-#define waitspi() { while(!(SPID.STATUS & 0x80u)) LED_PORT.OUTTGL = LED1; }
+#define waitspi() { while(!(SPID.STATUS & 0x80u)) nop(); }
 
 uint8_t enc28j60ReadOp(uint8_t op, uint8_t address) {
     CSACTIVE;
