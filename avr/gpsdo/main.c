@@ -59,8 +59,7 @@ uint16_t print_webpage(uint8_t *buf) {
     plen = http200ok();
 
     plen = fill_tcp_data_p(buf, plen, PSTR("PLL Locked: "));
-    sprintf(temp, "%d", locked);
-    plen = fill_tcp_data(buf, plen, temp);
+    plen = fill_tcp_data_p(buf, plen, locked ? PSTR("yes") : PSTR("no"));
 
     plen = fill_tcp_data_p(buf, plen, PSTR("\nPLL Error: "));
     sprintf(temp, "%.1f", error);

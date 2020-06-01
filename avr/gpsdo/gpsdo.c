@@ -13,7 +13,7 @@
 
 // loop tuning
 #define MAX_PPS_DELTA (2) // 32 microseconds
-#define SETTLED_VAR (40000) // 1 microsecond RMS
+#define SETTLED_VAR (1000) // 1 microsecond RMS
 #define RING_SIZE (64u)
 #define RES_NS (40)
 
@@ -216,12 +216,12 @@ inline void onRisingPPS() {
     // update statistics
     ledOn(LED0);
     pllLocked = 1;
-    int32_t acc = 0;
+    int64_t acc = 0;
     for(uint8_t i = 0; i < RING_SIZE; i++) {
         acc += error[i];
         pllLocked &= (realigned[i] ^ 1u);
     }
-    pllError = acc;
+    pllError = (float) acc;
     pllError /= RING_SIZE;
     pllError *= RES_NS;
 
@@ -231,7 +231,7 @@ inline void onRisingPPS() {
         int32_t diff = error[i] - mean;
         acc += diff * diff;
     }
-    pllErrorRms = abs(acc);
+    pllErrorRms = (float) ((acc < 0) ? -acc : acc);
     pllErrorRms /= RING_SIZE;
     pllErrorRms = sqrtf(pllErrorRms);
     pllErrorRms *= RES_NS;
