@@ -19,9 +19,9 @@ static uint8_t myip[4]={0,0,0,0};
 // Default gateway (DHCP will provide a value for it):
 static uint8_t gwip[4]={0,0,0,0};
 #define TRANS_NUM_GWMAC 1
-static uint8_t gwmac[6];
+static uint8_t gwmac[6]={0,0,0,0,0,0};
 // Netmask (DHCP will provide a value for it):
-static uint8_t netmask[4];
+static uint8_t netmask[4]={0,0,0,0};
 
 // packet buffer
 #define BUFFER_SIZE 650
@@ -67,7 +67,9 @@ int main(void) {
     init_mac(macAddr);
     while(rval==0){
         plen=enc28j60PacketReceive(BUFFER_SIZE, buf);
-        buf[BUFFER_SIZE]='\0';
+        buf[BUFFER_SIZE]=0;
+        if(plen != 0)
+            LED_PORT.OUTTGL = LED1;
         rval=packetloop_dhcp_initial_ip_assignment(buf,plen,macAddr[0]);
     }
     // we have an IP:
