@@ -211,12 +211,7 @@ inline void onRisingPPS() {
     statsIndex = (statsIndex + 1u) & (RING_SIZE - 1u);
 }
 
-// PPS leading edge
-ISR(TCD0_CCA_vect, ISR_BLOCK) {
-    onRisingPPS();
-}
-
-ISR(TCD0_OVF_vect, ISR_NOBLOCK) {
+inline void updatePll() {
     ledOn(LED0);
 
     pllLocked = 1;
@@ -237,4 +232,14 @@ ISR(TCD0_OVF_vect, ISR_NOBLOCK) {
 
     if((!pllLocked) || (pllErrorVar > SETTLED_VAR))
         ledOff(LED0);
+}
+
+// PPS leading edge
+ISR(TCD0_CCA_vect, ISR_BLOCK) {
+    onRisingPPS();
+}
+
+// one-second interval
+ISR(TCD0_OVF_vect, ISR_NOBLOCK) {
+    updatePll();
 }
