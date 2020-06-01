@@ -151,8 +151,8 @@ void initMacAddress() {
     hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_COORDY0), hash);
     hash = appendSimpleHash(readProdByte(&PRODSIGNATURES_COORDY1), hash);
 
-    // use lower 24-bits as lower 24-bits of MAC address
-    macAddr[0] = (hash >> 0u) & 0xffu;
-    macAddr[1] = (hash >> 8u) & 0xffu;
-    macAddr[2] = (hash >> 16u) & 0xffu;
+    // use lower 24-bits as last 24-bits of MAC address
+    macAddr[5] = (hash >> 0u) & 0xffu;
+    macAddr[4] = (hash >> 8u) & 0xffu;
+    macAddr[3] = (hash >> 16u) & 0xffu;
 }
