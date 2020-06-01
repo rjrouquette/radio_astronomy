@@ -57,12 +57,12 @@ uint16_t print_webpage(uint8_t *buf) {
     sprintf(temp, "%d", isPllLocked());
     plen = fill_tcp_data(buf, plen, temp);
 
-    plen = fill_tcp_data_p(buf, plen, PSTR("PLL Error: "));
-    sprintf(temp, "%d", getPllError());
+    plen = fill_tcp_data_p(buf, plen, PSTR("\nPLL Error: "));
+    sprintf(temp, "%ld", getPllError());
     plen = fill_tcp_data(buf, plen, temp);
 
-    plen = fill_tcp_data_p(buf, plen, PSTR("PLL Error RMS: "));
-    sprintf(temp, "%d", getPllErrorVar());
+    plen = fill_tcp_data_p(buf, plen, PSTR("\nPLL Error RMS: "));
+    sprintf(temp, "%ld", getPllErrorVar());
     plen = fill_tcp_data(buf, plen, temp);
 
     plen = fill_tcp_data(buf, plen, "\n");
