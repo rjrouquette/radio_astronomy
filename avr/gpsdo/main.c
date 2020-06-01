@@ -97,7 +97,7 @@ int main(void) {
 
     // pause for a bit
     _delay_ms(100);
-/*
+
     LEDON;
     // we have a gateway.
     // find the mac address of the gateway (e.g your dsl router).
@@ -108,7 +108,7 @@ int main(void) {
         packetloop_arp_icmp_tcp(buf,plen);
     }
     LEDOFF;
-*/
+
     // infinite loop
     for(;;) {
         plen=enc28j60PacketReceive(BUFFER_SIZE, buf);
@@ -122,9 +122,9 @@ int main(void) {
         // dat_p will be unequal to zero if there is a valid  http get
         if(dat_p==0){
             // no http request
-            if (enc28j60linkup()){
+            if (enc28j60linkup()) {
                 LEDON;
-            }else{
+            } else {
                 LEDOFF;
             }
             continue;
