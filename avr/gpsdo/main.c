@@ -68,7 +68,7 @@ int main(void) {
     while(rval==0){
         plen=enc28j60PacketReceive(BUFFER_SIZE, buf);
         buf[BUFFER_SIZE]='\0';
-        rval=packetloop_dhcp_initial_ip_assignment(buf,plen,0);
+        rval=packetloop_dhcp_initial_ip_assignment(buf,plen,macAddr[0]);
     }
     // we have an IP:
     dhcp_get_my_ip(myip,netmask,gwip);
