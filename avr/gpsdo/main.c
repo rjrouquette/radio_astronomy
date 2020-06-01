@@ -49,11 +49,23 @@ uint16_t http200ok(void) {
 
 // prepare the webpage by writing the data to the tcp send buffer
 uint16_t print_webpage(uint8_t *buf) {
+    char temp[16];
     uint16_t plen;
     plen = http200ok();
-    plen += sprintf_P((char * ) buf + plen, PSTR("PLL Locked: %d\n"), isPllLocked());
-    plen += sprintf_P((char * ) buf + plen, PSTR("PLL Error: %d\n"), getPllError());
-    plen += sprintf_P((char * ) buf + plen, PSTR("PLL Error RMS: %d\n"), getPllErrorVar());
+
+    plen = fill_tcp_data_p(buf, plen, PSTR("PLL Locked: "));
+    sprintf(temp, "%d", isPllLocked());
+    plen = fill_tcp_data(buf, plen, temp);
+
+    plen = fill_tcp_data_p(buf, plen, PSTR("PLL Error: "));
+    sprintf(temp, "%d", getPllError());
+    plen = fill_tcp_data(buf, plen, temp);
+
+    plen = fill_tcp_data_p(buf, plen, PSTR("PLL Error RMS: "));
+    sprintf(temp, "%d", getPllErrorVar());
+    plen = fill_tcp_data(buf, plen, temp);
+
+    plen = fill_tcp_data(buf, plen, "\n");
     return plen;
 }
 
