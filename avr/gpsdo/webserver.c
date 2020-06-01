@@ -79,7 +79,7 @@ void initWebserver() {
     // 0x476 is PHLCON LEDA=links status, LEDB=receive/transmit
     // enc28j60PhyWrite(PHLCON,0b0000 0100 0111 01 10);
     enc28j60PhyWrite(PHLCON,0x476);
-/*
+
     LEDON;
     // DHCP handling. Get the initial IP
     rval=0;
@@ -104,7 +104,6 @@ void initWebserver() {
         packetloop_arp_icmp_tcp(buf,plen);
     }
     LEDOFF;
-*/
 }
 
 void updateWebserver() {
