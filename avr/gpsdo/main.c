@@ -129,10 +129,17 @@ void appendSimpleHash(uint8_t byte, uint32_t *hash) {
     (*hash) = ((*hash) << 5u) + (*hash) + byte;
 }
 
+uint8_t readProdByte(volatile uint8_t *offset) {
+    NVM.CMD = NVM_CMD_READ_CALIB_ROW_gc;
+    uint8_t temp = pgm_read_byte(offset);
+    NVM.CMD = NVM_CMD_NO_OPERATION_gc;
+    return temp;
+}
+
 void initMacAddress() {
     // create hash of serial number
     uint32_t hash = 5381;
-    appendSimpleHash(PRODSIGNATURES_LOTNUM0, &hash);
+    appendSimpleHash(readProdByte(&PRODSIGNATURES_LOTNUM0), &hash);
     appendSimpleHash(PRODSIGNATURES_LOTNUM1, &hash);
     appendSimpleHash(PRODSIGNATURES_LOTNUM2, &hash);
     appendSimpleHash(PRODSIGNATURES_LOTNUM3, &hash);
@@ -145,8 +152,7 @@ void initMacAddress() {
     appendSimpleHash(PRODSIGNATURES_COORDY1, &hash);
 
     // use lower 24-bits as lower 24-bits of MAC address
-    uint8_t *bytes = (uint8_t *) &hash;
-    macAddr[0] = bytes[0];
-    macAddr[1] = bytes[1];
-    macAddr[2] = bytes[2];
+    macAddr[0] = (hash >> 0u) & 0xffu;
+    macAddr[1] = (hash >> 8u) & 0xffu;
+    macAddr[2] = (hash >> 16u) & 0xffu;
 }
