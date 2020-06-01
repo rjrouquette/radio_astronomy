@@ -187,6 +187,7 @@ inline void onRisingPPS() {
     // check if PPS was realigned
     alignPPS();
 
+    // compute current tracking error
     int16_t currError = getDelta(
             TCC1.CCA, TCD0.CCA,
             TCC1.CCB, TCD0.CCB
@@ -204,14 +205,13 @@ inline void onRisingPPS() {
         }
     }
 
+    // update status ring
     prevPllError = currError;
     error[statsIndex] = currError;
     statsIndex = (statsIndex + 1u) & (RING_SIZE - 1u);
-}
 
-inline void updatePll() {
+    // update statistics
     ledOn(LED0);
-
     pllLocked = 1;
     int32_t acc = 0;
     for(uint8_t i = 0; i < RING_SIZE; i++) {
@@ -228,6 +228,7 @@ inline void updatePll() {
     }
     pllErrorVar = acc;
 
+    // determine if loop has settled
     if((!pllLocked) || (pllErrorVar > SETTLED_VAR))
         ledOff(LED0);
 }
@@ -235,5 +236,4 @@ inline void updatePll() {
 // PPS leading edge
 ISR(TCD0_CCA_vect) {
     onRisingPPS();
-    updatePll();
 }
