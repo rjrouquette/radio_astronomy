@@ -74,7 +74,7 @@ int main(void) {
     dhcp_get_my_ip(myip,netmask,gwip);
     client_ifconfig(myip,netmask);
     LEDOFF;
-
+/*
     LEDON;
     // we have a gateway.
     // find the mac address of the gateway (e.g your dsl router).
@@ -85,7 +85,7 @@ int main(void) {
         packetloop_arp_icmp_tcp(buf,plen);
     }
     LEDOFF;
-
+*/
     // infinite loop
     for(;;) {
         nop();
