@@ -31,6 +31,9 @@ static uint8_t start_web_client=0;
 static uint8_t web_client_sendok=0;
 static int8_t processing_state=0;
 
+static volatile uint8_t sec=0; // counts up to 6 and goes back to zero
+static volatile uint8_t gsec=0; // counts up beyond 6 sec
+
 void appendSimpleHash(uint8_t byte, uint32_t *hash) {
     (*hash) = ((*hash) << 5u) + (*hash) + byte;
 }
@@ -56,6 +59,8 @@ void initMacAddress() {
     macAddr[1] = bytes[1];
     macAddr[2] = bytes[2];
 }
+
+void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t reference_number,uint8_t *mac);
 
 void initWebserver() {
     uint16_t dat_p,plen;
@@ -87,6 +92,18 @@ void initWebserver() {
     dhcp_get_my_ip(myip,netmask,gwip);
     client_ifconfig(myip,netmask);
     LEDOFF;
+
+    LEDON;
+    // we have a gateway.
+    // find the mac address of the gateway (e.g your dsl router).
+    get_mac_with_arp(gwip,TRANS_NUM_GWMAC,&arpresolver_result_callback);
+    while(get_mac_with_arp_wait()){
+        // to process the ARP reply we must call the packetloop
+        plen=enc28j60PacketReceive(BUFFER_SIZE, buf);
+        packetloop_arp_icmp_tcp(buf,plen);
+    }
+    LEDOFF;
+
 }
 
 void updateSecond() {
@@ -95,10 +112,24 @@ void updateSecond() {
     // clear interrupt flag
     TCC0.INTFLAGS = 1u;
 
-
+    sec++;
+    gsec++;
+    if (sec>5){
+        sec=0;
+        dhcp_6sec_tick();
+    }
 }
 
 void updateWebserver() {
     updateSecond();
 
+}
+
+// the __attribute__((unused)) is a gcc compiler directive to avoid warnings about unsed variables.
+void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t reference_number, uint8_t *mac) {
+    uint8_t i=0;
+    if (reference_number==TRANS_NUM_GWMAC){
+        // copy mac address over:
+        while(i<6){gwmac[i]=mac[i];i++;}
+    }
 }
