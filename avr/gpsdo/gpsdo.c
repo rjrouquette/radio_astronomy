@@ -5,6 +5,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <math.h>
+#include <stdlib.h>
 #include "gpsdo.h"
 #include "nop.h"
 #include "leds.h"
@@ -14,7 +15,7 @@
 #define MAX_PPS_DELTA (2) // 32 microseconds
 #define SETTLED_VAR (40000) // 1 microsecond RMS
 #define RING_SIZE (64u)
-#define RING_DIV (8u)
+#define RES_NS (40)
 
 // hi-res counter
 #define DIV_LSB (400)
@@ -222,7 +223,7 @@ inline void onRisingPPS() {
     }
     pllError = acc;
     pllError /= RING_SIZE;
-    pllError *= 40e-9f;
+    pllError *= RES_NS;
 
     int16_t mean = (int16_t) (acc / RING_SIZE);
     acc = 0;
@@ -230,10 +231,10 @@ inline void onRisingPPS() {
         int32_t diff = error[i] - mean;
         acc += diff * diff;
     }
-    pllErrorRms = acc;
+    pllErrorRms = abs(acc);
     pllErrorRms /= RING_SIZE;
     pllErrorRms = sqrtf(pllErrorRms);
-    pllErrorRms *= 40e-9f;
+    pllErrorRms *= RES_NS;
 
     // determine if loop has settled
     if((!pllLocked) || (pllErrorRms > SETTLED_VAR))

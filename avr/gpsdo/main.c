@@ -63,14 +63,14 @@ uint16_t print_webpage(uint8_t *buf) {
     plen = fill_tcp_data(buf, plen, temp);
 
     plen = fill_tcp_data_p(buf, plen, PSTR("\nPLL Error: "));
-    sprintf(temp, "%f", error);
+    sprintf(temp, "%.1f", error);
     plen = fill_tcp_data(buf, plen, temp);
 
-    plen = fill_tcp_data_p(buf, plen, PSTR(" s\nPLL Error RMS: "));
-    sprintf(temp, "%f", errRms);
+    plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nPLL Error RMS: "));
+    sprintf(temp, "%.1f", errRms);
     plen = fill_tcp_data(buf, plen, temp);
 
-    plen = fill_tcp_data(buf, plen, " s\n");
+    plen = fill_tcp_data(buf, plen, " ns\n");
     return plen;
 }
 
