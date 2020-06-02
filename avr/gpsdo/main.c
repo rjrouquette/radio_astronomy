@@ -31,7 +31,7 @@ static uint8_t netmask[4]={0,0,0,0};
 #define BUFFER_SIZE 650
 static uint8_t buf[BUFFER_SIZE+1];
 
-// gps nema buffer, record zero is rx buffer
+// gps NEMA buffer, record zero is rx buffer
 uint8_t rx_cnt = 0;
 char gpsMsgs[4][83];
 
@@ -97,9 +97,7 @@ int main(void) {
     sei();
 
     uint16_t dat_p,plen;
-    char str[20];
     uint8_t rval;
-    uint8_t i;
 
     // init ethernet controller
     initMacAddress();
@@ -269,13 +267,13 @@ ISR(USARTC1_RXC_vect, ISR_NOBLOCK) {
     if(byte == '\n') {
         gpsMsgs[0][rx_cnt] = 0;
 
-        if(strncmp(gpsMsgs[0], "$GPGGA", 6) == 0) {
+        if(strncmp(gpsMsgs[0], "$GPGGA,", 7) == 0) {
             strcpy(gpsMsgs[1], gpsMsgs[0]);
         }
-        else if(strncmp(gpsMsgs[0], "$GPRMC", 6) == 0) {
+        else if(strncmp(gpsMsgs[0], "$GPRMC,", 7) == 0) {
             strcpy(gpsMsgs[2], gpsMsgs[0]);
         }
-        else if(strncmp(gpsMsgs[0], "$GPGSA", 6) == 0) {
+        else if(strncmp(gpsMsgs[0], "$GPGSA,", 7) == 0) {
             strcpy(gpsMsgs[3], gpsMsgs[0]);
         }
     }
