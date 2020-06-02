@@ -66,7 +66,7 @@ uint16_t print_webpage(uint8_t *buf) {
     sprintf(temp, "%.1f", error);
     plen = fill_tcp_data(buf, plen, temp);
 
-    plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nPLL Error RMS: "));
+    plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nPLL RMSE: "));
     sprintf(temp, "%.1f", errRms);
     plen = fill_tcp_data(buf, plen, temp);
 
