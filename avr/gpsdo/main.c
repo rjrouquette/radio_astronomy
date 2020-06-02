@@ -33,7 +33,7 @@ static uint8_t buf[BUFFER_SIZE+1];
 
 // gps nema buffer, record zero is rx buffer
 uint8_t rx_cnt = 0;
-char gpsMsgs[3][83];
+char gpsMsgs[4][83];
 
 void initSysClock(void);
 uint32_t appendSimpleHash(uint8_t byte, uint32_t hash);
@@ -273,6 +273,9 @@ ISR(USARTC1_RXC_vect, ISR_NOBLOCK) {
         }
         else if(strncmp(gpsMsgs[0], "$GPRMC", 6) == 0) {
             strcpy(gpsMsgs[2], gpsMsgs[0]);
+        }
+        else if(strncmp(gpsMsgs[0], "$GPGSA", 6) == 0) {
+            strcpy(gpsMsgs[3], gpsMsgs[0]);
         }
     }
 }
