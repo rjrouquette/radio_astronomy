@@ -32,6 +32,7 @@ static uint8_t netmask[4]={0,0,0,0};
 static uint8_t buf[BUFFER_SIZE+1];
 
 // gps nema buffer
+uint8_t gpsRing[256];
 uint16_t rx_cnt = 0;
 
 void initSysClock(void);
@@ -84,11 +85,11 @@ int main(void) {
     initGPSDO();
 
     // init USART for 9600 baud (bsel = -4, bscale = 2588)
-    USARTC0.BAUDCTRLA = 0x1cu;
-    USARTC0.BAUDCTRLB = 0xcau;
-    USARTC0.CTRLA = 0x10u;
-    USARTC0.CTRLC = 0x03u;
-    USARTC0.CTRLB = 0x10u;
+    USARTC1.BAUDCTRLA = 0x1cu;
+    USARTC1.BAUDCTRLB = 0xcau;
+    USARTC1.CTRLA = 0x10u;
+    USARTC1.CTRLC = 0x03u;
+    USARTC1.CTRLB = 0x10u;
 
     // startup complete
     PMIC.CTRL = 0x07u; // enable all interrupts
@@ -251,6 +252,7 @@ void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t ref
     }
 }
 
-ISR(USARTC0_RXC_vect, ISR_BLOCK) {
+ISR(USARTC1_RXC_vect, ISR_BLOCK) {
     rx_cnt++;
+    gpsRing[0] = USARTC1.DATA;
 }
