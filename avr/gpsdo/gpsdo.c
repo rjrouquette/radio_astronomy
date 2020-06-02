@@ -35,6 +35,7 @@ volatile uint8_t dhcpSec;
 volatile uint16_t pllFeedback;
 volatile uint8_t pllDither;
 
+volatile int16_t prevPllError;
 volatile uint8_t statsIndex;
 volatile int16_t error[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
@@ -53,6 +54,7 @@ void initGPSDO() {
     pllError = 0;
     pllErrorRms = 0;
     pllDither = 0;
+    prevPllError = 0;
 
     // init DAC
     DACB.CTRLC = 0x09u; // AVCC Ref, left-aligned
@@ -176,6 +178,7 @@ inline void alignPPS() {
     if(diff > MAX_PPS_DELTA) {
         setPpsOffset(TCD0.CCA);
         realigned[statsIndex] = 1;
+        prevPllError = 0;
     } else {
         realigned[statsIndex] = 0;
     }
@@ -193,15 +196,21 @@ inline void onRisingPPS() {
             TCC1.CCA, TCD0.CCA,
             TCC1.CCB, TCD0.CCB
     );
+    int16_t deltaError = currError - prevPllError;
 
     // update PLL feedback
     if(PORTB.IN & 1u) {
-        incFeedback();
+        if(deltaError <= 0) {
+            incFeedback();
+        }
     } else {
-        decFeedback();
+        if(deltaError >= 0) {
+            decFeedback();
+        }
     }
 
     // update status ring
+    prevPllError = currError;
     error[statsIndex] = currError;
     statsIndex = (statsIndex + 1u) & (RING_SIZE - 1u);
 
