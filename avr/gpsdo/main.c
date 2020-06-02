@@ -31,9 +31,9 @@ static uint8_t netmask[4]={0,0,0,0};
 #define BUFFER_SIZE 650
 static uint8_t buf[BUFFER_SIZE+1];
 
-// gps nema buffer
-uint8_t gpsRing[256];
-uint16_t rx_cnt = 0;
+// gps nema buffer, record zero is rx buffer
+uint8_t rx_cnt = 0;
+char gpsMsgs[3][83];
 
 void initSysClock(void);
 uint32_t appendSimpleHash(uint8_t byte, uint32_t hash);
@@ -71,8 +71,8 @@ uint16_t print_webpage(uint8_t *buf) {
     plen = fill_tcp_data(buf, plen, temp);
 
     plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nGPS NEMA:\n"));
-    sprintf(temp, "%d", rx_cnt);
-    plen = fill_tcp_data(buf, plen, temp);
+    plen = fill_tcp_data(buf, plen, gpsMsgs[1]);
+    plen = fill_tcp_data(buf, plen, gpsMsgs[2]);
 
     plen = fill_tcp_data(buf, plen, "\n");
     return plen;
@@ -252,7 +252,27 @@ void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t ref
     }
 }
 
-ISR(USARTC1_RXC_vect, ISR_BLOCK) {
-    rx_cnt++;
-    gpsRing[0] = USARTC1.DATA;
+ISR(USARTC1_RXC_vect, ISR_NOBLOCK) {
+    uint8_t byte = USARTC1.DATA;
+    if(byte == '$') {
+        rx_cnt = 0;
+    }
+    else if(rx_cnt >= 82) {
+        return;
+    }
+
+    // save byte
+    gpsMsgs[0][rx_cnt++] = byte;
+
+    // end-of-message
+    if(byte == '\n') {
+        gpsMsgs[0][rx_cnt] = 0;
+
+        if(strncmp(gpsMsgs[0], "$GPGGA", 6) == 0) {
+            strcpy(gpsMsgs[1], gpsMsgs[0]);
+        }
+        else if(strncmp(gpsMsgs[0], "$GPRMC", 6) == 0) {
+            strcpy(gpsMsgs[2], gpsMsgs[0]);
+        }
+    }
 }
