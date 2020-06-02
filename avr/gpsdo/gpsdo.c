@@ -162,6 +162,18 @@ inline void incFeedback() {
     }
 }
 
+inline void decFeedback16() {
+    if(pllFeedback > 15u) {
+        pllFeedback -= 16u;
+    }
+}
+
+inline void incFeedback16() {
+    if(pllFeedback < (MAX_FEEDBACK - 15u)) {
+        pllFeedback += 16u;
+    }
+}
+
 inline void alignPPS() {
     int32_t a = (uint32_t) TCD0.CCA;
     int32_t b = (uint32_t) TCD0.CCB;
@@ -201,11 +213,17 @@ inline void onRisingPPS() {
     // update PLL feedback
     if(PORTB.IN & 1u) {
         if(deltaError <= 0) {
-            incFeedback();
+            if(pllLocked)
+                incFeedback();
+            else
+                incFeedback16();
         }
     } else {
         if(deltaError >= 0) {
-            decFeedback();
+            if(pllLocked)
+                decFeedback();
+            else
+                decFeedback16();
         }
     }
 
