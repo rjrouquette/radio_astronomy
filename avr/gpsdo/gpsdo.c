@@ -5,7 +5,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <math.h>
-#include <stdlib.h>
 #include "gpsdo.h"
 #include "nop.h"
 #include "leds.h"
@@ -31,12 +30,9 @@
 #define MOD_ALL_LO (-12500000)
 
 volatile uint8_t dhcpSec;
-volatile uint8_t pllSec;
-volatile uint16_t ppsOffset;
 volatile uint16_t pllFeedback;
 
 volatile int16_t prevPllError;
-volatile uint8_t prevPllUpdate;
 volatile uint8_t statsIndex;
 volatile int16_t error[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
@@ -49,10 +45,9 @@ float pllErrorRms;
 void setPpsOffset(uint16_t offset);
 
 void initGPSDO() {
-    ppsOffset = 0;
+    dhcpSec = 0;
     pllFeedback = 0;
     statsIndex = 0;
-    prevPllUpdate = 0;
     pllLocked = 0;
     pllError = 0;
     pllErrorRms = 0;
@@ -96,6 +91,8 @@ void initGPSDO() {
     TCD0.CTRLD = 0x3du;
     // highest priority capture interrupt
     TCD0.INTCTRLB = 0x03u;
+    // mid priority overflow interrupt
+    TCD0.INTCTRLA = 0x02u;
     TCD0.PER = DIV_MSB - 1u;
     TCD0.CCA = 0u;
     TCD0.CCB = 0u;
@@ -128,7 +125,6 @@ void setPpsOffset(uint16_t offset) {
         TCC0.CCB = offset - 56249;
         PORTC.PIN0CTRL = 0x40u;
     }
-    ppsOffset = offset;
 }
 
 int16_t getDelta(uint16_t lsbA, uint16_t msbA, uint16_t lsbB, uint16_t msbB) {
@@ -239,18 +235,18 @@ inline void onRisingPPS() {
     // determine if loop has settled
     if((!pllLocked) || (pllErrorRms > SETTLED_VAR))
         ledOff(LED0);
-
-    // increment pll second counter (exposed for external timekeeping)
-    pllSec++;
-
-    // increment dhcp counter
-    if(++dhcpSec > 5) {
-        dhcpSec = 0;
-        dhcp_6sec_tick();
-    }
 }
 
 // PPS leading edge
 ISR(TCD0_CCA_vect, ISR_BLOCK) {
     onRisingPPS();
+}
+
+// one second interval
+ISR(TCD0_OVF_vect, ISR_BLOCK) {
+    // increment dhcp counter
+    if(++dhcpSec > 5) {
+        dhcpSec = 0;
+        dhcp_6sec_tick();
+    }
 }

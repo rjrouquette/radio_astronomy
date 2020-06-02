@@ -7,7 +7,6 @@
 
 void initGPSDO();
 
-extern volatile uint8_t pllSec;
 uint8_t isPllLocked();
 float getPllError();
 float getPllErrorRms();
