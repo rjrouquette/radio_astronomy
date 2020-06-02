@@ -33,7 +33,7 @@
 
 volatile uint8_t dhcpSec;
 volatile uint16_t pllFeedback;
-volatile uint16_t pllDither[16];
+volatile uint8_t pllDither;
 
 volatile uint8_t statsIndex;
 volatile int16_t error[RING_SIZE];
@@ -52,35 +52,15 @@ void initGPSDO() {
     pllLocked = 0;
     pllError = 0;
     pllErrorRms = 0;
+    pllDither = 0;
 
     // init DAC
     DACB.CTRLC = 0x09u; // AVCC Ref, left-aligned
     DACB.CTRLB = 0x00u; // Enable Channel 0
     DACB.CTRLA = 0x05u; // Enable Channel 0
-    DACB.EVCTRL = DAC_EVSEL_3_gc;
     while(!(DACB.STATUS & 0x01u)) nop();
-    DACB.CH0DATA = 2048u; // start at mid-scale
     pllFeedback = 2048u << 4u;
-    for(uint8_t i = 0; i < 16; i++) {
-        pllDither[i] = pllFeedback;
-    }
-
-    // init DMA
-    // DMA CH3 for DAC
-    DMA.CH3.ADDRCTRL = 0xD9u;
-    DMA.CH3.TRIGSRC = 0x25; // DACB DMA triggers base value, +0x00 CH0 DAC Channel 0
-    DMA.CH3.TRFCNT = sizeof(pllDither);
-    DMA.CH3.SRCADDR0 = (uint16_t)(((uint16_t) pllDither)>>0u) & 0xFFu;
-    DMA.CH3.SRCADDR1 = (uint16_t)(((uint16_t) pllDither)>>8u) & 0xFFu;
-    DMA.CH3.SRCADDR2 = 0;
-    DMA.CH3.DESTADDR0 = (uint16_t)(((uint16_t)(&DACB.CH0DATAL))>>0u) & 0xFFu;
-    DMA.CH3.DESTADDR1 = (uint16_t)(((uint16_t)(&DACB.CH0DATAL))>>8u) & 0xFFu;
-    DMA.CH3.DESTADDR2 = 0;
-    DMA.CH3.CTRLA = 0b10100100;
-    DMA.CTRL= 0x80;
-
-    // Event System
-    EVSYS.CH3MUX = 0x85u; // Event CH3 = CLK / 32
+    DACB.CH0DATA = pllFeedback; // start at mid-scale
 
     // PPS Capture
     PORTA.DIRCLR = 0xc0u; // pin 6 + 7
@@ -95,6 +75,8 @@ void initGPSDO() {
     TCC1.CTRLB = 0x30u;
     TCC1.CTRLD = 0x2du;
     TCC1.PER = DIV_LSB - 1u;
+    // high priority overflow interrupt
+    TCC1.INTCTRLA = 0x03u;
     // OVF carry
     EVSYS.CH7MUX = 0xc8u;
     EVSYS.CH7CTRL = 0x00u;
@@ -166,23 +148,15 @@ int16_t getDelta(uint16_t lsbA, uint16_t msbA, uint16_t lsbB, uint16_t msbB) {
     return (int16_t) diff;
 }
 
-inline void updateFeedback() {
-    for(uint8_t i = 0; i < 16; i++) {
-        pllDither[i] = pllFeedback + i;
-    }
-}
-
 inline void decFeedback() {
     if(pllFeedback > 0u) {
         --pllFeedback;
-        updateFeedback();
     }
 }
 
 inline void incFeedback() {
     if(pllFeedback < MAX_FEEDBACK) {
         ++pllFeedback;
-        updateFeedback();
     }
 }
 
@@ -271,4 +245,10 @@ ISR(TCD0_OVF_vect, ISR_BLOCK) {
         dhcpSec = 0;
         dhcp_6sec_tick();
     }
+}
+
+// 62.5 kHz
+ISR(TCC1_OVF_vect, ISR_BLOCK) {
+    DACB.CH0DATA = pllFeedback + pllDither;
+    pllDither = (pllDither + 1u) & 15u;
 }
