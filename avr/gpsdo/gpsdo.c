@@ -29,11 +29,8 @@
 #define MOD_ALL_HI ( 12499999)
 #define MOD_ALL_LO (-12500000)
 
-#define MAX_FEEDBACK (4095u << 4u)
-
 volatile uint8_t dhcpSec;
 volatile uint16_t pllFeedback;
-volatile uint8_t pllDither;
 
 volatile int16_t prevPllError;
 volatile uint8_t statsIndex;
@@ -49,20 +46,20 @@ void setPpsOffset(uint16_t offset);
 
 void initGPSDO() {
     dhcpSec = 0;
+    pllFeedback = 0;
     statsIndex = 0;
     pllLocked = 0;
     pllError = 0;
     pllErrorRms = 0;
-    pllDither = 0;
     prevPllError = 0;
 
     // init DAC
-    DACB.CTRLC = 0x09u; // AVCC Ref, left-aligned
+    DACB.CTRLC = 0x08u; // AVCC Ref
     DACB.CTRLB = 0x00u; // Enable Channel 0
     DACB.CTRLA = 0x05u; // Enable Channel 0
     while(!(DACB.STATUS & 0x01u)) nop();
-    pllFeedback = 2048u << 4u;
-    DACB.CH0DATA = pllFeedback; // start at mid-scale
+    DACB.CH0DATA = 2048u; // start at mid-scale
+    pllFeedback = 2048u;
 
     // PPS Capture
     PORTA.DIRCLR = 0xc0u; // pin 6 + 7
@@ -77,8 +74,6 @@ void initGPSDO() {
     TCC1.CTRLB = 0x30u;
     TCC1.CTRLD = 0x2du;
     TCC1.PER = DIV_LSB - 1u;
-    // high priority overflow interrupt
-    TCC1.INTCTRLA = 0x03u;
     // OVF carry
     EVSYS.CH7MUX = 0xc8u;
     EVSYS.CH7CTRL = 0x00u;
@@ -152,25 +147,13 @@ int16_t getDelta(uint16_t lsbA, uint16_t msbA, uint16_t lsbB, uint16_t msbB) {
 
 inline void decFeedback() {
     if(pllFeedback > 0u) {
-        --pllFeedback;
+        DACB.CH0DATA = --pllFeedback;
     }
 }
 
 inline void incFeedback() {
-    if(pllFeedback < MAX_FEEDBACK) {
-        ++pllFeedback;
-    }
-}
-
-inline void decFeedback16() {
-    if(pllFeedback > 15u) {
-        pllFeedback -= 16u;
-    }
-}
-
-inline void incFeedback16() {
-    if(pllFeedback < (MAX_FEEDBACK - 15u)) {
-        pllFeedback += 16u;
+    if(pllFeedback < 4095u) {
+        DACB.CH0DATA = ++pllFeedback;
     }
 }
 
@@ -213,17 +196,11 @@ inline void onRisingPPS() {
     // update PLL feedback
     if(PORTB.IN & 1u) {
         if(deltaError <= 0) {
-            if(pllLocked)
-                incFeedback();
-            else
-                incFeedback16();
+            incFeedback();
         }
     } else {
         if(deltaError >= 0) {
-            if(pllLocked)
-                decFeedback();
-            else
-                decFeedback16();
+            decFeedback();
         }
     }
 
@@ -272,10 +249,4 @@ ISR(TCD0_OVF_vect, ISR_BLOCK) {
         dhcpSec = 0;
         dhcp_6sec_tick();
     }
-}
-
-// 62.5 kHz
-ISR(TCC1_OVF_vect, ISR_BLOCK) {
-    DACB.CH0DATA = pllFeedback + pllDither;
-    pllDither = (pllDither + 1u) & 15u;
 }
