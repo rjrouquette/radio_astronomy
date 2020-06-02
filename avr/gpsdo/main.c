@@ -136,7 +136,6 @@ int main(void) {
         plen=packetloop_dhcp_renewhandler(buf,plen); // for this to work you have to call dhcp_6sec_tick() every 6 sec
         dat_p=packetloop_arp_icmp_tcp(buf,plen);
 
-
         // dat_p will be unequal to zero if there is a valid  http get
         if(dat_p==0){
             // no http request
@@ -147,7 +146,9 @@ int main(void) {
             }
             continue;
         }
+
         // tcp port 80 begin
+        LEDOFF;
         if (strncmp("GET ",(char *)&(buf[dat_p]),4)!=0) {
             // head, post and other methods:
             dat_p=http200ok();
