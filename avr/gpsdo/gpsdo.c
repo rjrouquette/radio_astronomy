@@ -67,7 +67,7 @@ void initGPSDO() {
 
     // init DMA
     // DMA CH3 for DAC
-    DMA.CH3.ADDRCTRL = 0xD5u;
+    DMA.CH3.ADDRCTRL = 0xD9u;
     DMA.CH3.TRIGSRC = 0x25; // DACB DMA triggers base value, +0x00 CH0 DAC Channel 0
     DMA.CH3.TRFCNT = sizeof(pllDither);
     DMA.CH3.SRCADDR0 = (uint16_t)(((uint16_t) pllDither)>>0u) & 0xFFu;
