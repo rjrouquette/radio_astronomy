@@ -29,10 +29,12 @@
 #define MOD_ALL_HI ( 12499999)
 #define MOD_ALL_LO (-12500000)
 
+#define MAX_FEEDBACK (4095u << 4u)
+
 volatile uint8_t dhcpSec;
 volatile uint16_t pllFeedback;
+volatile uint16_t pllDither[16];
 
-volatile int16_t prevPllError;
 volatile uint8_t statsIndex;
 volatile int16_t error[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
@@ -46,20 +48,39 @@ void setPpsOffset(uint16_t offset);
 
 void initGPSDO() {
     dhcpSec = 0;
-    pllFeedback = 0;
     statsIndex = 0;
     pllLocked = 0;
     pllError = 0;
     pllErrorRms = 0;
-    prevPllError = 0;
 
     // init DAC
-    DACB.CTRLC = 0x08u; // AVCC Ref
+    DACB.CTRLC = 0x09u; // AVCC Ref, left-aligned
     DACB.CTRLB = 0x00u; // Enable Channel 0
     DACB.CTRLA = 0x05u; // Enable Channel 0
+    DACB.EVCTRL = DAC_EVSEL_3_gc;
     while(!(DACB.STATUS & 0x01u)) nop();
     DACB.CH0DATA = 2048u; // start at mid-scale
-    pllFeedback = 2048u;
+    pllFeedback = 2048u << 4u;
+    for(uint8_t i = 0; i < 16; i++) {
+        pllDither[i] = pllFeedback;
+    }
+
+    // init DMA
+    // DMA CH3 for DAC
+    DMA.CH3.ADDRCTRL = 0xD5u;
+    DMA.CH3.TRIGSRC = 0x25; // DACB DMA triggers base value, +0x00 CH0 DAC Channel 0
+    DMA.CH3.TRFCNT = sizeof(pllDither);
+    DMA.CH3.SRCADDR0 = (uint16_t)(((uint16_t) pllDither)>>0u) & 0xFFu;
+    DMA.CH3.SRCADDR1 = (uint16_t)(((uint16_t) pllDither)>>8u) & 0xFFu;
+    DMA.CH3.SRCADDR2 = 0;
+    DMA.CH3.DESTADDR0 = (uint16_t)(((uint16_t)(&DACB.CH0DATAL))>>0u) & 0xFFu;
+    DMA.CH3.DESTADDR1 = (uint16_t)(((uint16_t)(&DACB.CH0DATAL))>>8u) & 0xFFu;
+    DMA.CH3.DESTADDR2 = 0;
+    DMA.CH3.CTRLA = 0b10100100;
+    DMA.CTRL= 0x80;
+
+    // Event System
+    EVSYS.CH3MUX = 0x85u; // Event CH3 = CLK / 32
 
     // PPS Capture
     PORTA.DIRCLR = 0xc0u; // pin 6 + 7
@@ -145,15 +166,23 @@ int16_t getDelta(uint16_t lsbA, uint16_t msbA, uint16_t lsbB, uint16_t msbB) {
     return (int16_t) diff;
 }
 
+inline void updateFeedback() {
+    for(uint8_t i = 0; i < 16; i++) {
+        pllDither[i] = pllFeedback + i;
+    }
+}
+
 inline void decFeedback() {
     if(pllFeedback > 0u) {
-        DACB.CH0DATA = --pllFeedback;
+        --pllFeedback;
+        updateFeedback();
     }
 }
 
 inline void incFeedback() {
-    if(pllFeedback < 4095u) {
-        DACB.CH0DATA = ++pllFeedback;
+    if(pllFeedback < MAX_FEEDBACK) {
+        ++pllFeedback;
+        updateFeedback();
     }
 }
 
@@ -173,7 +202,6 @@ inline void alignPPS() {
     if(diff > MAX_PPS_DELTA) {
         setPpsOffset(TCD0.CCA);
         realigned[statsIndex] = 1;
-        prevPllError = 0;
     } else {
         realigned[statsIndex] = 0;
     }
@@ -191,21 +219,15 @@ inline void onRisingPPS() {
             TCC1.CCA, TCD0.CCA,
             TCC1.CCB, TCD0.CCB
     );
-    int16_t deltaError = currError - prevPllError;
 
     // update PLL feedback
     if(PORTB.IN & 1u) {
-        if(deltaError <= 0) {
-            incFeedback();
-        }
+        incFeedback();
     } else {
-        if(deltaError >= 0) {
-            decFeedback();
-        }
+        decFeedback();
     }
 
     // update status ring
-    prevPllError = currError;
     error[statsIndex] = currError;
     statsIndex = (statsIndex + 1u) & (RING_SIZE - 1u);
 
