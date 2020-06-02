@@ -30,9 +30,9 @@ static uint8_t netmask[4]={0,0,0,0};
 // packet buffer
 #define BUFFER_SIZE 650
 static uint8_t buf[BUFFER_SIZE+1];
-static uint8_t start_web_client=0;
-static uint8_t web_client_sendok=0;
-static int8_t processing_state=0;
+
+// gps nema buffer
+uint16_t rx_cnt = 0;
 
 void initSysClock(void);
 uint32_t appendSimpleHash(uint8_t byte, uint32_t hash);
@@ -69,7 +69,11 @@ uint16_t print_webpage(uint8_t *buf) {
     sprintf(temp, "%.1f", errRms);
     plen = fill_tcp_data(buf, plen, temp);
 
-    plen = fill_tcp_data(buf, plen, " ns\n");
+    plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nGPS NEMA:\n"));
+    sprintf(temp, "%d", rx_cnt);
+    plen = fill_tcp_data(buf, plen, temp);
+
+    plen = fill_tcp_data(buf, plen, "\n");
     return plen;
 }
 
@@ -78,6 +82,13 @@ int main(void) {
     initLEDs();
     initSysClock();
     initGPSDO();
+
+    // init USART for 9600 baud (bsel = -4, bscale = 2588)
+    USARTC0.BAUDCTRLA = 0x1cu;
+    USARTC0.BAUDCTRLB = 0xcau;
+    USARTC0.CTRLA = 0x10u;
+    USARTC0.CTRLC = 0x03u;
+    USARTC0.CTRLB = 0x10u;
 
     // startup complete
     PMIC.CTRL = 0x07u; // enable all interrupts
@@ -238,4 +249,8 @@ void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t ref
         // copy mac address over:
         while(i<6){gwmac[i]=mac[i];i++;}
     }
+}
+
+ISR(USARTC0_RXC_vect, ISR_BLOCK) {
+    rx_cnt++;
 }
