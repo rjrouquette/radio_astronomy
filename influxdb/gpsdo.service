@@ -14,3 +14,6 @@ StartLimitBurst=3
 StandardOutput=journal
 StandardError=journal
 ExecStart=/usr/bin/python3 /usr/local/bin/gpsdo.py
+
+[Install]
+WantedBy=multi-user.target
