@@ -1,0 +1,16 @@
+[Unit]
+Description=GPSDO Stats Collector
+
+[Service]
+Type=simple
+User=nobody
+BlockIOAccounting=yes
+CPUAccounting=yes
+MemoryAccounting=yes
+Restart=no
+RestartSec=10
+StartLimitInterval=5
+StartLimitBurst=3
+StandardOutput=journal
+StandardError=journal
+ExecStart=/usr/bin/python3 /usr/local/bin/gpsdo.py
