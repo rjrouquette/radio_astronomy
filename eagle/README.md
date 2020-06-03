@@ -11,7 +11,7 @@ The LNA utilizes the BFU730F transistor at its core and provides a 75 Ohm input 
 ![alt text][antenna]
 
 ## Master Clock (GPSDO)
-The master clock board is based around the STMicro TESEO-LIV3R GPS module and a SiTime SIT3807 VCXO.  The board injects 3.3 V into the 50 Ohm GPS SMA connector to support active antennas.  The reference clock BPSK output signals are provided through four 50 Ohm SMA connectors.  Power is supllied to the board via a micro USB connector.  Wire holes are also provided as a power option.  A combination of an ATXMega16A4U and discrete logic form the basis of the GPSOD PLL and BPSK tranmitter.
+The master clock board is based around the STMicro TESEO-LIV3R GPS module and a SiTime SIT3807 VCXO.  The board injects 3.3 V into the 50 Ohm GPS SMA connector to support active antennas.  The reference clock BPSK output signals are provided through four 50 Ohm SMA connectors.  Power is supllied to the board via a micro USB connector.  Wire holes are also provided as a power option.  A combination of an ATXMega16A4U and discrete logic form the basis of the GPSOD PLL and BPSK transmitter.
 
 ![alt text][clk_master]
 
