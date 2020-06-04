@@ -1600,7 +1600,7 @@ design rules under a new name.</description>
 <element name="E$2" library="wirepad" library_urn="urn:adsk.eagle:library:412" package="1,6/0,8" package3d_urn="urn:adsk.eagle:package:30830/1" value="" x="2.54" y="40.005" smashed="yes">
 <attribute name="VALUE" x="2.54" y="40.605" size="0.0254" layer="27"/>
 </element>
-<element name="R3" library="ref-packages-longpad" library_urn="urn:adsk.eagle:library:337" package="R0402" value="86" x="17.78" y="27.305" smashed="yes" rot="R180"/>
+<element name="R3" library="ref-packages-longpad" library_urn="urn:adsk.eagle:library:337" package="R0402" value="91" x="17.78" y="27.305" smashed="yes" rot="R180"/>
 </elements>
 <signals>
 <signal name="GND">
