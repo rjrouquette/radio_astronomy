@@ -25,7 +25,10 @@ Baseband sample data from the SDR DAS modules will transported over ethernet via
 The total protocol overhead (EC + UDP + IP + Ethernet) comes to 22.5% (979.5 Mbps)
 
 ## Master Clock
-A master clock system will be employed to minimize timming drift between the SDR DAS modules.  The master clock will transmit a BPSK encoded PPS on a 25 Mhz carrier via coax.  The rising edge of the PPS signal will be used to synchronize sample framing and PLL counters to minimuze phase errors.  The master clock source will be GPS disciplined to reduce frequency drift.
+A master clock system will be employed to minimize timming drift between the SDR DAS modules.  The master clock provides a BPSK encoded PPS signal on a 25 MHz carrier via coax.  The rising edge of the PPS signal will be used to synchronize sample framing and PLL counters to minimuze phase errors and relative drift.  The master clock source is GPS disciplined to reduce frequency drift and absolute offset errors.  A plot of the GPSDO PLL performance is provided below.  The GPS antenna is indoors, which causes the GPS PPS to have high jitter.
+
+![alt text][gpsdo]
 
 
 [digitzer]: https://github.com/rjrouquette/radio_astronomy/raw/master/images/digitizer_block_diagram.png "Block Diagram"
+[gpsdo]: https://github.com/rjrouquette/radio_astronomy/raw/master/images/gpsdo_grafana.png "GPSDO Performance"
