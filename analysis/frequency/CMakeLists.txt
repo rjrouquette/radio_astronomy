@@ -1,12 +1,10 @@
 cmake_minimum_required(VERSION 3.0)
-project(hamming_ec)
+project(frequency_response)
 
 set(CMAKE_CXX_STANDARD 11)
 
 add_executable(
-        hamming_ec
+        frequency_response
 
         main.cpp
-        HammingEC.cpp
-        HammingEC.hpp
 )
