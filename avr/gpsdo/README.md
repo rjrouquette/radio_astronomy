@@ -1,5 +1,5 @@
 # GPSDO Firmware
-Atmel XMega16A4U source code for PPS generation, GPS PLL, and UDP status engine.
+Atmel XMega16A4U source code for PPS generation, GPS PLL, and UDP status engine.  This code uses the [tuxgraphics.org](http://tuxgraphics.org/electronics/200611/embedded-webserver.shtml) ENC28J60 webserver source code.
 
 The uC generates its own PPS signal for comparison with the GPS PPS signal by cascading two of the 16-bit counters to fully divide the 25 MHz clock into one second intervals and an external XOR gate to combine the timer comparison outputs.  The phase alignment between the two PPS signals is performed using an external D-type flip-flop that captures the GPS PPS level on the rising edge of the uC PPS signal.
 
