@@ -11,14 +11,15 @@
 #include "net/dhcp_client.h"
 
 // loop tuning
-#define ZERO_FB (2173) // 0 ppm
+#define MAX_FB (4095u << 4u)
+#define ZERO_FB (2173u << 4u) // 0 ppm
 #define MAX_PPS_DELTA (2) // 32 microseconds
-#define SETTLED_VAR (1000) // 1 microsecond RMS
+#define SETTLED_VAR (200) // 0.2 microsecond RMS
 #define RING_SIZE (64u)
 #define RES_NS (40)
 
 // ppm scalar (effective ppm per bit with +/- 170ppm pull range)
-#define PPM_SCALE (0.08401f)
+#define PPM_SCALE (0.0052506f) // 0.08401f
 
 // hi-res counter
 #define DIV_LSB (400)
@@ -38,11 +39,12 @@ volatile uint16_t pllFeedback;
 
 volatile int16_t prevPllError;
 volatile uint8_t statsIndex;
-volatile int16_t adjustment[RING_SIZE];
+volatile uint16_t adjustment[RING_SIZE];
 volatile int16_t error[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
 
 uint8_t pllLocked;
+uint8_t pllSettled;
 float pllError;
 float pllErrorRms;
 float pllAdjustment;
@@ -54,18 +56,22 @@ void initGPSDO() {
     pllFeedback = 0;
     statsIndex = 0;
     pllLocked = 0;
+    pllSettled = 0;
     pllError = 0;
     pllErrorRms = 0;
     pllAdjustment = 0;
     prevPllError = 0;
 
     // init DAC
-    DACB.CTRLC = 0x08u; // AVCC Ref
+    DACB.CTRLC = 0x09u; // AVCC Ref, left-aligned
     DACB.CTRLB = 0x00u; // Enable Channel 0
     DACB.CTRLA = 0x05u; // Enable Channel 0
     while(!(DACB.STATUS & 0x01u)) nop();
     DACB.CH0DATA = ZERO_FB;
     pllFeedback = ZERO_FB;
+    for(uint8_t i = 0; i < RING_SIZE; i++) {
+        adjustment[i] = pllFeedback;
+    }
 
     // PPS Capture
     PORTA.DIRCLR = 0xc0u; // pin 6 + 7
@@ -80,6 +86,8 @@ void initGPSDO() {
     TCC1.CTRLB = 0x30u;
     TCC1.CTRLD = 0x2du;
     TCC1.PER = DIV_LSB - 1u;
+    // high priority overflow interrupt
+    TCC1.INTCTRLA = 0x03u;
     // OVF carry
     EVSYS.CH7MUX = 0xc8u;
     EVSYS.CH7CTRL = 0x00u;
@@ -95,8 +103,8 @@ void initGPSDO() {
     TCD0.CTRLA = 0x0fu;
     TCD0.CTRLB = 0x30u;
     TCD0.CTRLD = 0x3du;
-    // highest priority capture interrupt
-    TCD0.INTCTRLB = 0x03u;
+    // mid priority capture interrupt
+    TCD0.INTCTRLB = 0x02u;
     // mid priority overflow interrupt
     TCD0.INTCTRLA = 0x02u;
     TCD0.PER = DIV_MSB - 1u;
@@ -157,13 +165,25 @@ int16_t getDelta(uint16_t lsbA, uint16_t msbA, uint16_t lsbB, uint16_t msbB) {
 
 inline void decFeedback() {
     if(pllFeedback > 0u) {
-        DACB.CH0DATA = --pllFeedback;
+        --pllFeedback;
     }
 }
 
 inline void incFeedback() {
-    if(pllFeedback < 4095u) {
-        DACB.CH0DATA = ++pllFeedback;
+    if(pllFeedback < MAX_FB) {
+        ++pllFeedback;
+    }
+}
+
+inline void decFeedback16() {
+    if(pllFeedback > 15u) {
+        pllFeedback -= 16u;
+    }
+}
+
+inline void incFeedback16() {
+    if(pllFeedback < MAX_FB - 16u) {
+        pllFeedback += 16u;
     }
 }
 
@@ -206,11 +226,13 @@ inline void onRisingPPS() {
     // update PLL feedback
     if(PORTB.IN & 1u) {
         if(deltaError <= 0) {
-            incFeedback();
+            if (pllSettled) incFeedback();
+            else            incFeedback16();
         }
     } else {
         if(deltaError >= 0) {
-            decFeedback();
+            if (pllSettled) decFeedback();
+            else            decFeedback16();
         }
     }
 
@@ -236,7 +258,6 @@ inline void onRisingPPS() {
     acc = 0;
     for(uint8_t i = 0; i < RING_SIZE; i++) {
         acc += error[i];
-        pllLocked &= (realigned[i] ^ 1u);
     }
     pllError = (float) acc;
     pllError /= RING_SIZE;
@@ -254,17 +275,24 @@ inline void onRisingPPS() {
     pllErrorRms *= RES_NS;
 
     // determine if loop has settled
-    if((!pllLocked) || (pllErrorRms > SETTLED_VAR))
-        ledOff(LED0);
+    pllSettled = (pllLocked && (pllErrorRms <= SETTLED_VAR));
+    if (!pllSettled) ledOff(LED0);
+}
+
+// 62.5 kHz update
+static uint8_t twiddle = 0;
+ISR(TCC1_OVF_vect, ISR_BLOCK) {
+    DACB.CH0DATA = pllFeedback + twiddle;
+    twiddle = (twiddle + 1u) & 0xfu;
 }
 
 // PPS leading edge
-ISR(TCD0_CCA_vect, ISR_BLOCK) {
+ISR(TCD0_CCA_vect, ISR_NOBLOCK) {
     onRisingPPS();
 }
 
 // one second interval
-ISR(TCD0_OVF_vect, ISR_BLOCK) {
+ISR(TCD0_OVF_vect, ISR_NOBLOCK) {
     // increment dhcp counter
     if(++dhcpSec > 5) {
         dhcpSec = 0;
