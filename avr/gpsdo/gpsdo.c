@@ -16,7 +16,7 @@
 #define MAX_PPS_DELTA (1) // 16 microseconds
 #define SETTLED_VAR (250) // 250 nanoseconds RMS
 #define RING_SIZE (64u)
-#define RES_NS (40)
+#define RES_NS (20)
 
 // ppm scalar (effective ppm per bit with +/- 170ppm pull range)
 #define PPM_SCALE (0.0052506f) // 0.08401f
@@ -151,22 +151,23 @@ void setPpsOffset(uint16_t offset) {
     }
 }
 
+// A = gPPS, B = uPPS
 int16_t getDelta(uint16_t lsbA, uint16_t msbA, uint16_t lsbB, uint16_t msbB) {
     int32_t a = (((uint32_t)msbA) * DIV_LSB) + lsbA;
     int32_t b = (((uint32_t)msbB) * DIV_LSB) + lsbB;
 
     // modulo difference
-    int32_t diff = a - b;
+    int32_t diff = b - a;
     if(diff > MOD_ALL_HI)
         diff = DIV_ALL - diff;
     if(diff < MOD_ALL_LO)
         diff = DIV_ALL + diff;
 
-    if(diff > 32767)
-        return 32767;
-    if(diff < -32768)
-        return -32768;
-    return (int16_t) diff;
+    if(diff > 16383)
+        diff = 16383;
+    if(diff < -16384)
+        diff = -16384;
+    return (int16_t) ((diff * 2) + 1);
 }
 
 inline void decFeedback(uint8_t step) {
@@ -217,16 +218,16 @@ inline void onRisingPPS() {
     );
     int16_t deltaError = currError - prevPllError;
     int16_t step = currError;
-    if(step < 1) step = 1 - step;
+    if(step < 0) step = -step;
     if(step > 255) step = 255;
 
     // update PLL feedback
     if(PORTB.IN & 1u) {
-        if(deltaError < 1) {
+        if(deltaError > 1) {
             incFeedback(step);
         }
     } else {
-        if(deltaError > -1) {
+        if(deltaError < -1) {
             decFeedback(step);
         }
     }
