@@ -73,6 +73,14 @@ void initGPSDO() {
         adjustment[i] = pllFeedback;
     }
 
+    // DAC Twiddling
+    TCD1.CTRLB = 0x30u;
+    TCD1.CTRLD = 0x2du;
+    TCD1.PER = 99u; // 250 kHz
+    // high priority overflow interrupt
+    TCD1.INTCTRLA = 0x03u;
+    TCD1.CTRLA = 0x01u;
+
     // PPS Capture
     PORTA.DIRCLR = 0xc0u; // pin 6 + 7
     PORTA.PIN6CTRL = 0x01u; // rising edge
@@ -86,8 +94,6 @@ void initGPSDO() {
     TCC1.CTRLB = 0x30u;
     TCC1.CTRLD = 0x2du;
     TCC1.PER = DIV_LSB - 1u;
-    // high priority overflow interrupt
-    TCC1.INTCTRLA = 0x03u;
     // OVF carry
     EVSYS.CH7MUX = 0xc8u;
     EVSYS.CH7CTRL = 0x00u;
@@ -263,10 +269,9 @@ inline void onRisingPPS() {
     pllError /= RING_SIZE;
     pllError *= RES_NS;
 
-    int16_t mean = (int16_t) (acc / RING_SIZE);
     acc = 0;
     for(uint8_t i = 0; i < RING_SIZE; i++) {
-        int32_t diff = error[i] - mean;
+        int32_t diff = error[i];
         acc += diff * diff;
     }
     pllErrorRms = (float) ((acc < 0) ? -acc : acc);
@@ -279,9 +284,9 @@ inline void onRisingPPS() {
     if (!pllSettled) ledOff(LED0);
 }
 
-// 62.5 kHz update
+// DAC output twiddling
 static uint8_t twiddle = 0;
-ISR(TCC1_OVF_vect, ISR_BLOCK) {
+ISR(TCD1_OVF_vect, ISR_BLOCK) {
     DACB.CH0DATA = pllFeedback + twiddle;
     twiddle = (twiddle + 1u) & 0xfu;
 }
