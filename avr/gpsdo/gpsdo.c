@@ -16,6 +16,10 @@
 #define RING_SIZE (64u)
 #define RES_NS (40)
 
+// ppm constants
+#define PPM_M (0.06268f)
+#define PPM_B (-10.53f)
+
 // hi-res counter
 #define DIV_LSB (400)
 
@@ -226,6 +230,9 @@ inline void onRisingPPS() {
     }
     pllAdjustment = (float) acc;
     pllAdjustment /= RING_SIZE;
+    pllAdjustment -= 2048;
+    pllAdjustment *= PPM_M;
+    pllAdjustment += PPM_B;
 
     acc = 0;
     for(uint8_t i = 0; i < RING_SIZE; i++) {
