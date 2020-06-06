@@ -13,7 +13,7 @@
 // loop tuning
 #define MAX_FB (4095u << 4u)
 #define ZERO_FB (2173u << 4u) // 0 ppm
-#define MAX_PPS_DELTA (2) // 32 microseconds
+#define MAX_PPS_DELTA (1) // 16 microseconds
 #define SETTLED_VAR (250) // 250 nanoseconds RMS
 #define RING_SIZE (64u)
 #define RES_NS (40)
@@ -85,9 +85,9 @@ void initGPSDO() {
     PORTA.DIRCLR = 0xc0u; // pin 6 + 7
     PORTA.PIN6CTRL = 0x01u; // rising edge
     PORTA.PIN7CTRL = 0x01u; // rising edge
-    EVSYS.CH5MUX = 0x56u; // pin PA6
+    EVSYS.CH5MUX = 0x56u; // pin PA6 (gPPS)
     EVSYS.CH5CTRL = 0x00u;
-    EVSYS.CH6MUX = 0x57u; // pin PA7
+    EVSYS.CH6MUX = 0x57u; // pin PA7 (uPPS)
     EVSYS.CH6CTRL = 0x00u;
 
     // PPS Prescaling
@@ -169,27 +169,15 @@ int16_t getDelta(uint16_t lsbA, uint16_t msbA, uint16_t lsbB, uint16_t msbB) {
     return (int16_t) diff;
 }
 
-inline void decFeedback() {
-    if(pllFeedback > 0u) {
-        --pllFeedback;
+inline void decFeedback(uint8_t step) {
+    if(pllFeedback > (step - 1u)) {
+        pllFeedback -= step;
     }
 }
 
-inline void incFeedback() {
-    if(pllFeedback < MAX_FB) {
-        ++pllFeedback;
-    }
-}
-
-inline void decFeedback16() {
-    if(pllFeedback > 15u) {
-        pllFeedback -= 16u;
-    }
-}
-
-inline void incFeedback16() {
-    if(pllFeedback < MAX_FB - 16u) {
-        pllFeedback += 16u;
+inline void incFeedback(uint8_t step) {
+    if(pllFeedback < MAX_FB - step) {
+        pllFeedback += step;
     }
 }
 
@@ -228,17 +216,18 @@ inline void onRisingPPS() {
             TCC1.CCB, TCD0.CCB
     );
     int16_t deltaError = currError - prevPllError;
+    int16_t step = currError;
+    if(step < 1) step = 1 - step;
+    if(step > 16) step = 16;
 
     // update PLL feedback
     if(PORTB.IN & 1u) {
-        if(deltaError <= 0) {
-            if (pllSettled) incFeedback();
-            else            incFeedback16();
+        if(deltaError < 1) {
+            incFeedback(step);
         }
     } else {
-        if(deltaError >= 0) {
-            if (pllSettled) decFeedback();
-            else            decFeedback16();
+        if(deltaError > -1) {
+            decFeedback(step);
         }
     }
 
