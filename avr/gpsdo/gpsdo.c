@@ -17,7 +17,7 @@
 #define RING_SIZE (64u)
 #define RES_NS (40)
 
-// ppm scalar (effective ppm per bit)
+// ppm scalar (effective ppm per bit with +/- 170ppm pull range)
 #define PPM_SCALE (0.084f)
 
 // hi-res counter
