@@ -16,9 +16,10 @@ while True:
         locked = lines[0].split(': ')[1].strip() == 'yes'
         error = float(lines[1].split(': ')[1].strip().split()[0])
         rmse = float(lines[2].split(': ')[1].strip().split()[0])
-        body = 'gpsdo,host=%s locked=%d,pll_error=%.1f,pll_rmse=%.1f %d\n' % (gpsdoHost, locked, error, rmse, int(time.time() * 1000000000))
+        ppm = float(lines[3].split(': ')[1].strip().split()[0])
+        body = 'gpsdo,host=%s locked=%d,pll_error=%.1f,pll_rmse=%.1f,pll_ppm=%1.3f %d\n' % (gpsdoHost, locked, error, rmse, ppm, int(time.time() * 1000000000))
 
-        gpsFix = lines[4].strip().split(',')
+        gpsFix = lines[5].strip().split(',')
         fixType = int(gpsFix[6])
         fixSats = int(gpsFix[7])
         fixDop = float(gpsFix[8])
