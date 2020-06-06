@@ -14,7 +14,7 @@
 #define MAX_FB (4095u << 4u)
 #define ZERO_FB (2173u << 4u) // 0 ppm
 #define MAX_PPS_DELTA (2) // 32 microseconds
-#define SETTLED_VAR (200) // 0.2 microsecond RMS
+#define SETTLED_VAR (250) // 250 nanoseconds RMS
 #define RING_SIZE (64u)
 #define RES_NS (40)
 
