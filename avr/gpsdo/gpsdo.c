@@ -18,7 +18,7 @@
 #define RES_NS (40)
 
 // ppm scalar (effective ppm per bit with +/- 170ppm pull range)
-#define PPM_SCALE (0.084f)
+#define PPM_SCALE (0.08401f)
 
 // hi-res counter
 #define DIV_LSB (400)
