@@ -218,7 +218,7 @@ inline void onRisingPPS() {
     int16_t deltaError = currError - prevPllError;
     int16_t step = currError;
     if(step < 1) step = 1 - step;
-    if(step > 16) step = 16;
+    if(step > 255) step = 255;
 
     // update PLL feedback
     if(PORTB.IN & 1u) {
