@@ -10,6 +10,7 @@ void initGPSDO();
 uint8_t isPllLocked();
 float getPllError();
 float getPllErrorRms();
+float getPllFeedback();
 
 
 #endif //RGB_MATRIX_AVR_GPSDO_H

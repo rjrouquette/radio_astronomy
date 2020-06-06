@@ -54,6 +54,7 @@ uint16_t print_webpage(uint8_t *buf) {
     uint8_t locked = isPllLocked();
     float error = getPllError();
     float errRms = getPllErrorRms();
+    float fdbk = getPllFeedback();
 
     char temp[16];
     uint16_t plen;
@@ -68,6 +69,10 @@ uint16_t print_webpage(uint8_t *buf) {
 
     plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nPLL RMSE: "));
     sprintf(temp, "%.1f", errRms);
+    plen = fill_tcp_data(buf, plen, temp);
+
+    plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nPLL Feedback: "));
+    sprintf(temp, "%.1f", fdbk);
     plen = fill_tcp_data(buf, plen, temp);
 
     plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nGPS NEMA:\n"));

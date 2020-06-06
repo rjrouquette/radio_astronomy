@@ -34,13 +34,14 @@ volatile uint16_t pllFeedback;
 
 volatile int16_t prevPllError;
 volatile uint8_t statsIndex;
+volatile int16_t adjustment[RING_SIZE];
 volatile int16_t error[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
 
 uint8_t pllLocked;
 float pllError;
 float pllErrorRms;
-
+float pllAdjustment;
 
 void setPpsOffset(uint16_t offset);
 
@@ -51,6 +52,7 @@ void initGPSDO() {
     pllLocked = 0;
     pllError = 0;
     pllErrorRms = 0;
+    pllAdjustment = 0;
     prevPllError = 0;
 
     // init DAC
@@ -113,6 +115,10 @@ float getPllError() {
 
 float getPllErrorRms() {
     return pllErrorRms;
+}
+
+float getPllFeedback() {
+    return pllAdjustment;
 }
 
 void setPpsOffset(uint16_t offset) {
@@ -207,12 +213,21 @@ inline void onRisingPPS() {
     // update status ring
     prevPllError = currError;
     error[statsIndex] = currError;
+    adjustment[statsIndex] = pllFeedback;
     statsIndex = (statsIndex + 1u) & (RING_SIZE - 1u);
 
     // update statistics
     ledOn(LED0);
     pllLocked = 1;
     int64_t acc = 0;
+    for(uint8_t i = 0; i < RING_SIZE; i++) {
+        acc += adjustment[i];
+        pllLocked &= (realigned[i] ^ 1u);
+    }
+    pllAdjustment = (float) acc;
+    pllAdjustment /= RING_SIZE;
+
+    acc = 0;
     for(uint8_t i = 0; i < RING_SIZE; i++) {
         acc += error[i];
         pllLocked &= (realigned[i] ^ 1u);
