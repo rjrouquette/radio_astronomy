@@ -11,14 +11,14 @@
 #include "net/dhcp_client.h"
 
 // loop tuning
+#define ZERO_FB (2173) // 0 ppm
 #define MAX_PPS_DELTA (2) // 32 microseconds
 #define SETTLED_VAR (1000) // 1 microsecond RMS
 #define RING_SIZE (64u)
 #define RES_NS (40)
 
-// ppm constants
-#define PPM_M (0.06268f)
-#define PPM_B (-10.53f)
+// ppm scalar
+#define PPM_SCALE (0.08401f) // ppm per bit
 
 // hi-res counter
 #define DIV_LSB (400)
@@ -64,8 +64,8 @@ void initGPSDO() {
     DACB.CTRLB = 0x00u; // Enable Channel 0
     DACB.CTRLA = 0x05u; // Enable Channel 0
     while(!(DACB.STATUS & 0x01u)) nop();
-    DACB.CH0DATA = 2048u; // start at mid-scale
-    pllFeedback = 2048u;
+    DACB.CH0DATA = ZERO_FB;
+    pllFeedback = ZERO_FB;
 
     // PPS Capture
     PORTA.DIRCLR = 0xc0u; // pin 6 + 7
@@ -230,9 +230,8 @@ inline void onRisingPPS() {
     }
     pllAdjustment = (float) acc;
     pllAdjustment /= RING_SIZE;
-    pllAdjustment -= 2048;
-    pllAdjustment *= PPM_M;
-    pllAdjustment += PPM_B;
+    pllAdjustment -= ZERO_FB;
+    pllAdjustment *= PPM_SCALE;
 
     acc = 0;
     for(uint8_t i = 0; i < RING_SIZE; i++) {
