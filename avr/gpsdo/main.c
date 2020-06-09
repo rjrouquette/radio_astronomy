@@ -56,12 +56,17 @@ uint16_t print_webpage(uint8_t *buf) {
     float error = getPllError();
     float errRms = getPllErrorRms();
     float fdbk = getPllFeedback();
+    float temperature = getPllTemperature();
 
     char temp[16];
     uint16_t plen;
     plen = http200ok();
 
-    plen = fill_tcp_data_p(buf, plen, PSTR("PLL Locked: "));
+    plen = fill_tcp_data_p(buf, plen, PSTR("Temperature: "));
+    sprintf(temp, "%.1f", temperature);
+    plen = fill_tcp_data(buf, plen, temp);
+
+    plen = fill_tcp_data_p(buf, plen, PSTR(" C\nPLL Stable: "));
     plen = fill_tcp_data_p(buf, plen, locked ? PSTR("yes") : PSTR("no"));
 
     plen = fill_tcp_data_p(buf, plen, PSTR("\nPLL Error: "));
@@ -72,7 +77,7 @@ uint16_t print_webpage(uint8_t *buf) {
     sprintf(temp, "%.1f", errRms);
     plen = fill_tcp_data(buf, plen, temp);
 
-    plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nPLL Feedback: "));
+    plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nPLL Offset: "));
     sprintf(temp, "%.3f", fdbk);
     plen = fill_tcp_data(buf, plen, temp);
 
@@ -275,10 +280,10 @@ ISR(USARTC1_RXC_vect, ISR_NOBLOCK) {
         if(strncmp(gpsMsgs[0], "$GPGGA,", 7) == 0) {
             strcpy(gpsMsgs[1], gpsMsgs[0]);
         }
-        else if(strncmp(gpsMsgs[0], "$GPRMC,", 7) == 0) {
+        else if(strncmp(gpsMsgs[0], "$GNGSA,", 7) == 0) {
             strcpy(gpsMsgs[2], gpsMsgs[0]);
         }
-        else if(strncmp(gpsMsgs[0], "$GPZDA,", 7) == 0) {
+        else if(strncmp(gpsMsgs[0], "$GPRMC,", 7) == 0) {
             strcpy(gpsMsgs[3], gpsMsgs[0]);
             dateTimeReady = 1u;
         }

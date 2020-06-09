@@ -11,6 +11,7 @@ uint8_t isPllLocked();
 float getPllError();
 float getPllErrorRms();
 float getPllFeedback();
+float getPllTemperature();
 
 
 #endif //RGB_MATRIX_AVR_GPSDO_H

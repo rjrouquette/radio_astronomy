@@ -48,8 +48,14 @@ uint8_t pllSettled;
 float pllError;
 float pllErrorRms;
 float pllAdjustment;
+float pllTemperature;
+
+#define CAL_SECOND_TEMP (38.0f)
+#define CAL_SECOND_OFFSET (2317)
+float kelvin_per_adc;
 
 void setPpsOffset(uint16_t offset);
+uint8_t readProdByte(const volatile uint8_t *offset);
 
 void initGPSDO() {
     dhcpSec = 0;
@@ -60,6 +66,7 @@ void initGPSDO() {
     pllError = 0;
     pllErrorRms = 0;
     pllAdjustment = 0;
+    pllTemperature = 0;
     prevPllError = 0;
 
     // init DAC
@@ -121,10 +128,33 @@ void initGPSDO() {
     TCC0.CNT = 0;
     TCD0.CNT = 0;
     TCC1.CTRLA = 0x01u;
+
+    // configure ADC for temperature sensor
+    // cancel any pending conversions, disable ADC
+    ADCA.CTRLA = ADC_FLUSH_bm;
+    // set up exactly how Atmel did when they measured the calibration value
+    ADCA.CTRLB = ADC_RESOLUTION_12BIT_gc; // unsigned conversion, produces result in range 0-2048
+    ADCA.REFCTRL = ADC_REFSEL_INT1V_gc | ADC_TEMPREF_bm;
+    ADCA.PRESCALER = ADC_PRESCALER_DIV512_gc;
+    ADCA.CALL = readProdByte(&PRODSIGNATURES_ADCACAL0);
+    ADCA.CALH = readProdByte(&PRODSIGNATURES_ADCACAL1);
+    ADCA.CTRLA = ADC_ENABLE_bm;
+    // configure channel zero for temperature
+    ADCA.CH0.CTRL = ADC_CH_INPUTMODE_INTERNAL_gc | ADC_CH_GAIN_1X_gc;
+    ADCA.CH0.MUXCTRL = ADC_CH_MUXINT_TEMP_gc;
+
+    // get 358 K factory calibrated value
+    uint16_t ref = readProdByte(&PRODSIGNATURES_TEMPSENSE1);
+    ref <<= 8u;
+    ref |= readProdByte(&PRODSIGNATURES_TEMPSENSE0);
+    kelvin_per_adc = (85.0f - CAL_SECOND_TEMP) / (float) (ref - CAL_SECOND_OFFSET); // reference is ADC reading at 85C
+
+    // prepare first sample
+    ADCA.CH0.CTRL |= ADC_CH_START_bm;
 }
 
 uint8_t isPllLocked() {
-    return pllLocked;
+    return pllSettled;
 }
 
 float getPllError() {
@@ -137,6 +167,10 @@ float getPllErrorRms() {
 
 float getPllFeedback() {
     return pllAdjustment;
+}
+
+float getPllTemperature() {
+    return pllTemperature;
 }
 
 void setPpsOffset(uint16_t offset) {
@@ -272,6 +306,14 @@ inline void onRisingPPS() {
     // determine if loop has settled
     pllSettled = (pllLocked && (pllErrorRms <= SETTLED_VAR));
     if (!pllSettled) ledOff(LED0);
+
+    pllTemperature = ADCA.CH0.RES;
+    pllTemperature -= CAL_SECOND_OFFSET;
+    pllTemperature *= kelvin_per_adc;
+    pllTemperature += CAL_SECOND_TEMP;
+
+    // prepare next temperature sample
+    ADCA.CH0.CTRL |= ADC_CH_START_bm;
 }
 
 // DAC output twiddling
