@@ -18,7 +18,7 @@ while True:
         error = float(lines[2].split(': ')[1].strip().split()[0])
         rmse = float(lines[3].split(': ')[1].strip().split()[0])
         ppm = float(lines[4].split(': ')[1].strip().split()[0])
-        body = 'gpsdo,host=%s temperature=%.1f,locked=%d,pll_error=%.1f,pll_rmse=%.1f,pll_ppm=%1.3f %d\n' % (gpsdoHost, temperature, locked, error, rmse, ppm, int(time.time() * 1000000000))
+        body = 'gpsdo,host=%s temperature=%.1f,locked=%d,pll_error=%.1f,pll_rmse=%.1f,pll_ppm=%1.3f %d\n' % (gpsdoHost, temp, locked, error, rmse, ppm, int(time.time() * 1000000000))
 
         gpsFix = lines[6].strip().split(',')
         fixType = int(gpsFix[6])

@@ -39,6 +39,7 @@ volatile uint16_t pllFeedback;
 
 volatile int16_t prevPllError;
 volatile uint8_t statsIndex;
+volatile uint16_t adc_temp[RING_SIZE];
 volatile uint16_t adjustment[RING_SIZE];
 volatile int16_t error[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
@@ -51,7 +52,7 @@ float pllAdjustment;
 float pllTemperature;
 
 #define CAL_SECOND_TEMP (38.0f)
-#define CAL_SECOND_OFFSET (2317)
+#define CAL_SECOND_OFFSET (2315)
 float kelvin_per_adc;
 
 void setPpsOffset(uint16_t offset);
@@ -270,6 +271,7 @@ inline void onRisingPPS() {
     prevPllError = currError;
     error[statsIndex] = currError;
     adjustment[statsIndex] = pllFeedback;
+    adc_temp[statsIndex] = ADCA.CH0.RES;
     statsIndex = (statsIndex + 1u) & (RING_SIZE - 1u);
 
     // update statistics
@@ -307,7 +309,13 @@ inline void onRisingPPS() {
     pllSettled = (pllLocked && (pllErrorRms <= SETTLED_VAR));
     if (!pllSettled) ledOff(LED0);
 
-    pllTemperature = ADCA.CH0.RES;
+    // compute temperature
+    acc = 0;
+    for(uint8_t i = 0; i < RING_SIZE; i++) {
+        acc += error[i];
+    }
+    pllTemperature = (float) acc;
+    pllTemperature /= RING_SIZE;
     pllTemperature -= CAL_SECOND_OFFSET;
     pllTemperature *= kelvin_per_adc;
     pllTemperature += CAL_SECOND_TEMP;
