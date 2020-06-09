@@ -32,8 +32,9 @@ static uint8_t netmask[4]={0,0,0,0};
 static uint8_t buf[BUFFER_SIZE+1];
 
 // gps NEMA buffer, record zero is rx buffer
+static volatile uint8_t dateTimeReady = 0;
 static volatile uint8_t rx_cnt = 0;
-char gpsMsgs[3][83];
+char gpsMsgs[4][83];
 
 void initSysClock(void);
 uint32_t appendSimpleHash(uint8_t byte, uint32_t hash);
@@ -78,6 +79,7 @@ uint16_t print_webpage(uint8_t *buf) {
     plen = fill_tcp_data_p(buf, plen, PSTR(" ppm\nGPS NEMA:\n"));
     plen = fill_tcp_data(buf, plen, gpsMsgs[1]);
     plen = fill_tcp_data(buf, plen, gpsMsgs[2]);
+    plen = fill_tcp_data(buf, plen, gpsMsgs[3]);
     plen = fill_tcp_data(buf, plen, "\n");
     return plen;
 }
@@ -275,6 +277,10 @@ ISR(USARTC1_RXC_vect, ISR_NOBLOCK) {
         }
         else if(strncmp(gpsMsgs[0], "$GPRMC,", 7) == 0) {
             strcpy(gpsMsgs[2], gpsMsgs[0]);
+        }
+        else if(strncmp(gpsMsgs[0], "$GPZDA,", 7) == 0) {
+            strcpy(gpsMsgs[3], gpsMsgs[0]);
+            dateTimeReady = 1u;
         }
     }
 }
