@@ -151,6 +151,14 @@ void initGPSDO() {
     kelvin_per_adc = (85.0f - CAL_SECOND_TEMP) / (float) (ref - CAL_SECOND_OFFSET); // reference is ADC reading at 85C
 
     // prepare first sample
+    ADCA.CH0.INTFLAGS = 0x01u;
+    ADCA.CH0.CTRL |= ADC_CH_START_bm;
+    while(!(ADCA.CH0.INTFLAGS & 0x01u)) nop();
+    adc_temp[0] = ADCA.CH0.RES;
+    for(uint8_t i = 1; i < RING_SIZE; i++) {
+        adc_temp[i] = adc_temp[0];
+    }
+    // ready next sample
     ADCA.CH0.CTRL |= ADC_CH_START_bm;
 }
 
@@ -312,7 +320,7 @@ inline void onRisingPPS() {
     // compute temperature
     acc = 0;
     for(uint8_t i = 0; i < RING_SIZE; i++) {
-        acc += error[i];
+        acc += adc_temp[i];
     }
     pllTemperature = (float) acc;
     pllTemperature /= RING_SIZE;
