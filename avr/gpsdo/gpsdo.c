@@ -18,8 +18,8 @@
 #define RING_SIZE (64u)
 #define RES_NS (20)
 
-// ppm scalar (effective ppm per bit with +/- 170ppm pull range)
-#define PPM_SCALE (0.0052506f) // 0.08401f
+// ppm scalar (effective ppm per bit with +/- 50ppm pull range)
+#define PPM_SCALE (0.0015443f)
 
 // hi-res counter
 #define DIV_LSB (400)
@@ -266,11 +266,11 @@ inline void onRisingPPS() {
 
     // update PLL feedback
     if(PORTB.IN & 1u) {
-        if(deltaError > 0) {
+        if(deltaError >= 0) {
             incFeedback(step);
         }
     } else {
-        if(deltaError < 0) {
+        if(deltaError <= 0) {
             decFeedback(step);
         }
     }
