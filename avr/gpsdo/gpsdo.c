@@ -84,7 +84,7 @@ void initGPSDO() {
     // DAC Twiddling
     TCD1.CTRLB = 0x30u;
     TCD1.CTRLD = 0x2du;
-    TCD1.PER = 99u; // 250 kHz
+    TCD1.PER = 249u; // 100 kHz
     // high priority overflow interrupt
     TCD1.INTCTRLA = 0x03u;
     TCD1.CTRLA = 0x01u;
@@ -120,6 +120,7 @@ void initGPSDO() {
     // mid priority capture interrupt
     TCD0.INTCTRLB = 0x02u;
     // mid priority overflow interrupt
+    // ISR is located in "net/dhcp_client.c" to reduce overhead
     TCD0.INTCTRLA = 0x02u;
     TCD0.PER = DIV_MSB - 1u;
     TCD0.CCA = 0u;
@@ -344,13 +345,4 @@ ISR(TCD1_OVF_vect, ISR_BLOCK) {
 // PPS leading edge
 ISR(TCD0_CCA_vect, ISR_NOBLOCK) {
     onRisingPPS();
-}
-
-// one second interval
-ISR(TCD0_OVF_vect, ISR_NOBLOCK) {
-    // increment dhcp counter
-    if(++dhcpSec > 5) {
-        dhcpSec = 0;
-        dhcp_6sec_tick();
-    }
 }
