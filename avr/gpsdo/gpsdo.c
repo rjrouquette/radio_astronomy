@@ -37,7 +37,6 @@
 volatile uint8_t dhcpSec;
 volatile uint16_t pllFeedback;
 
-volatile int16_t prevPllError;
 volatile uint8_t statsIndex;
 volatile uint16_t adc_temp[RING_SIZE];
 volatile uint16_t adjustment[RING_SIZE];
@@ -68,7 +67,6 @@ void initGPSDO() {
     pllErrorRms = 0;
     pllAdjustment = 0;
     pllTemperature = 0;
-    prevPllError = 0;
 
     // init DAC
     DACB.CTRLC = 0x09u; // AVCC Ref, left-aligned
@@ -241,7 +239,6 @@ inline void alignPPS() {
     if(diff > MAX_PPS_DELTA) {
         setPpsOffset(TCD0.CCA);
         realigned[statsIndex] = 1;
-        prevPllError = 0;
     } else {
         realigned[statsIndex] = 0;
     }
@@ -259,8 +256,6 @@ inline void onRisingPPS() {
             TCC1.CCA, TCD0.CCA,
             TCC1.CCB, TCD0.CCB
     );
-    // compute delta error
-    int16_t deltaError = currError - prevPllError;
     // dynamic feedback gain
     int16_t step = currError;
     if(step < 0) step = -step;
@@ -268,17 +263,12 @@ inline void onRisingPPS() {
 
     // update PLL feedback with overshoot damping
     if(PORTB.IN & 1u) {
-        if(deltaError > 0) {
-            incFeedback(step);
-        }
+        incFeedback(step);
     } else {
-        if(deltaError < 0) {
-            decFeedback(step);
-        }
+        decFeedback(step);
     }
 
     // update status ring
-    prevPllError = currError;
     error[statsIndex] = currError;
     adjustment[statsIndex] = pllFeedback;
     adc_temp[statsIndex] = ADCA.CH0.RES;
