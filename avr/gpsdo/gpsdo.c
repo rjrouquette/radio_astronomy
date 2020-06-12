@@ -117,7 +117,8 @@ void initGPSDO() {
     TCD0.CTRLD = 0x3du;
     // mid priority capture interrupt
     TCD0.INTCTRLB = 0x02u;
-    // mid priority overflow interrupt (ISR located in net/dhcp_client.c to reduce overhead)
+    // mid priority overflow interrupt
+    // ISR is located in "net/dhcp_client.c" to reduce overhead
     TCD0.INTCTRLA = 0x02u;
     TCD0.PER = DIV_MSB - 1u;
     TCD0.CCA = 0u;
