@@ -335,11 +335,9 @@ inline void onRisingPPS() {
 }
 
 // DAC output twiddling
-static volatile uint16_t dacOutput = 0;
 static volatile uint8_t twiddle = 0;
 ISR(TCD1_OVF_vect, ISR_BLOCK) {
-    dacOutput = pllFeedback + twiddle;
-    DACB.CH0DATA = dacOutput;
+    DACB.CH0DATA = pllFeedback + twiddle;
     twiddle = (twiddle + 1u) & 0xfu;
 }
 
