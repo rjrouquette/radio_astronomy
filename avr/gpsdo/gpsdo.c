@@ -259,12 +259,14 @@ inline void onRisingPPS() {
             TCC1.CCA, TCD0.CCA,
             TCC1.CCB, TCD0.CCB
     );
+    // compute delta error
     int16_t deltaError = currError - prevPllError;
+    // dynamic feedback gain
     int16_t step = currError;
     if(step < 0) step = -step;
     if(step > 255) step = 255;
 
-    // update PLL feedback
+    // update PLL feedback with overshoot damping
     if(PORTB.IN & 1u) {
         if(deltaError > 0) {
             incFeedback(step);
