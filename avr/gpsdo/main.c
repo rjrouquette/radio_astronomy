@@ -78,7 +78,7 @@ uint16_t print_webpage(uint8_t *buf) {
     plen = fill_tcp_data(buf, plen, temp);
 
     plen = fill_tcp_data_p(buf, plen, PSTR(" ns\nPLL Offset: "));
-    sprintf(temp, "%.3f", fdbk);
+    sprintf(temp, "%.4f", fdbk);
     plen = fill_tcp_data(buf, plen, temp);
 
     plen = fill_tcp_data_p(buf, plen, PSTR(" ppm\nGPS NEMA:\n"));
