@@ -44,12 +44,12 @@ volatile uint16_t adjustment[RING_SIZE];
 volatile int16_t error[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
 
-uint8_t pllLocked;
-uint8_t pllSettled;
-float pllError;
-float pllErrorRms;
-float pllAdjustment;
-float pllTemperature;
+volatile uint8_t pllLocked;
+volatile uint8_t pllSettled;
+volatile float pllError;
+volatile float pllErrorRms;
+volatile float pllAdjustment;
+volatile float pllTemperature;
 
 #define CAL_SECOND_TEMP (38.0f)
 #define CAL_SECOND_OFFSET (2315)
@@ -265,17 +265,14 @@ inline void onRisingPPS() {
     int16_t step = currError;
     if(step < 0) step = -step;
     if(step > 255) step = 255;
-    // fine tuning modes
-    if(pllSettled || deltaError == 0)
-        step = 1;
 
     // update PLL feedback with overshoot damping
     if(PORTB.IN & 1u) {
-        if(pllSettled || deltaError >= 0) {
+        if(deltaError > 0) {
             incFeedback(step);
         }
     } else {
-        if(pllSettled || deltaError <= 0) {
+        if(deltaError < 0) {
             decFeedback(step);
         }
     }
