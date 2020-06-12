@@ -262,7 +262,7 @@ inline void onRisingPPS() {
     // compute delta error
     int16_t deltaError = currError - prevPllError;
     // dynamic feedback gain
-    int16_t step = currError;
+    int16_t step = currError / 2;
     if(step < 0) step = -step;
     if(step > 255) step = 255;
 
