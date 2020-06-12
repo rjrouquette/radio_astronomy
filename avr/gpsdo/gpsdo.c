@@ -272,9 +272,15 @@ inline void onRisingPPS() {
         if(deltaError >= 0) {
             incFeedback(step);
         }
+        else if(deltaError == 0) {
+            incFeedback(1);
+        }
     } else {
-        if(deltaError <= 0) {
+        if(deltaError < 0) {
             decFeedback(step);
+        }
+        else if(deltaError == 0) {
+            decFeedback(1);
         }
     }
 
