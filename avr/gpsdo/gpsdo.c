@@ -34,7 +34,6 @@
 #define MOD_ALL_HI ( 12499999)
 #define MOD_ALL_LO (-12500000)
 
-volatile uint8_t dhcpSec;
 volatile uint16_t pllFeedback;
 
 volatile int16_t prevPllError;
@@ -59,7 +58,6 @@ void setPpsOffset(uint16_t offset);
 uint8_t readProdByte(const volatile uint8_t *offset);
 
 void initGPSDO() {
-    dhcpSec = 0;
     pllFeedback = 0;
     statsIndex = 0;
     pllLocked = 0;
@@ -184,13 +182,13 @@ float getPllTemperature() {
 }
 
 void setPpsOffset(uint16_t offset) {
-    if(offset < 56250) {
+    if(offset < 56250u) {
         TCC0.CCA = offset;
-        TCC0.CCB = offset + 6250;
+        TCC0.CCB = offset + 6250u;
         PORTC.PIN0CTRL = 0x00u;
     } else {
         TCC0.CCA = offset;
-        TCC0.CCB = offset - 56249;
+        TCC0.CCB = offset - 56249u;
         PORTC.PIN0CTRL = 0x40u;
     }
 }
@@ -269,7 +267,7 @@ inline void onRisingPPS() {
 
     // update PLL feedback with overshoot damping
     if(PORTB.IN & 1u) {
-        if(deltaError >= 0) {
+        if(deltaError > 0) {
             incFeedback(step);
         }
         else if(deltaError == 0) {
@@ -344,8 +342,11 @@ inline void onRisingPPS() {
 // DAC output twiddling
 static volatile uint8_t twiddle = 0;
 ISR(TCD1_OVF_vect, ISR_BLOCK) {
-    DACB.CH0DATA = pllFeedback + twiddle;
-    twiddle = (twiddle + 1u) & 0xfu;
+    uint8_t t = twiddle;
+    DACB.CH0DATA = pllFeedback + t;
+    t += 0x01u;
+    t &= 0x0fu;
+    twiddle = t;
 }
 
 // PPS leading edge
