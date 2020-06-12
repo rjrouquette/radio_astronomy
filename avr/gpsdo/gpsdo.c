@@ -82,7 +82,7 @@ void initGPSDO() {
     // DAC Twiddling
     TCD1.CTRLB = 0x30u;
     TCD1.CTRLD = 0x2du;
-    TCD1.PER = 99u; // 250 kHz
+    TCD1.PER = 249u; // 100 kHz
     // high priority overflow interrupt
     TCD1.INTCTRLA = 0x03u;
     TCD1.CTRLA = 0x01u;
