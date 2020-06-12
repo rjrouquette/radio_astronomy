@@ -265,14 +265,15 @@ inline void onRisingPPS() {
     int16_t step = currError;
     if(step < 0) step = -step;
     if(step > 255) step = 255;
+    if(deltaError == 0) step = 1;
 
     // update PLL feedback with overshoot damping
     if(PORTB.IN & 1u) {
-        if(deltaError > 0) {
+        if(deltaError >= 0) {
             incFeedback(step);
         }
     } else {
-        if(deltaError < 0) {
+        if(deltaError <= 0) {
             decFeedback(step);
         }
     }
