@@ -20,7 +20,7 @@
 // you must call this function every 6 seconds (approx 6 sec it can be exact but does not have
 // to be. If in doubt call it very 5 sec rather than every 7 seconds). It is save
 // to do this from interrupt
-extern void dhcp_6sec_tick(void);
+//extern void dhcp_6sec_tick(void);
 // Initial_tid can be a random number for every board. E.g the last digit
 // of the mac address. It is not so important that the number is random.
 // It is more important that it is unique and no other board on the same
