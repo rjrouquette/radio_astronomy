@@ -34,8 +34,10 @@
 #define MOD_ALL_HI ( 12499999)
 #define MOD_ALL_LO (-12500000)
 
+volatile uint8_t dhcpSec;
 volatile uint16_t pllFeedback;
 
+volatile int16_t prevPllError;
 volatile uint8_t statsIndex;
 volatile uint16_t adc_temp[RING_SIZE];
 volatile uint16_t adjustment[RING_SIZE];
@@ -57,6 +59,7 @@ void setPpsOffset(uint16_t offset);
 uint8_t readProdByte(const volatile uint8_t *offset);
 
 void initGPSDO() {
+    dhcpSec = 0;
     pllFeedback = 0;
     statsIndex = 0;
     pllLocked = 0;
@@ -65,6 +68,7 @@ void initGPSDO() {
     pllErrorRms = 0;
     pllAdjustment = 0;
     pllTemperature = 0;
+    prevPllError = 0;
 
     // init DAC
     DACB.CTRLC = 0x09u; // AVCC Ref, left-aligned
@@ -80,7 +84,7 @@ void initGPSDO() {
     // DAC Twiddling
     TCD1.CTRLB = 0x30u;
     TCD1.CTRLD = 0x2du;
-    TCD1.PER = 249u; // 100 kHz
+    TCD1.PER = 99u; // 250 kHz
     // high priority overflow interrupt
     TCD1.INTCTRLA = 0x03u;
     TCD1.CTRLA = 0x01u;
@@ -116,7 +120,6 @@ void initGPSDO() {
     // mid priority capture interrupt
     TCD0.INTCTRLB = 0x02u;
     // mid priority overflow interrupt
-    // ISR is located in "net/dhcp_client.c" to reduce overhead
     TCD0.INTCTRLA = 0x02u;
     TCD0.PER = DIV_MSB - 1u;
     TCD0.CCA = 0u;
@@ -180,13 +183,13 @@ float getPllTemperature() {
 }
 
 void setPpsOffset(uint16_t offset) {
-    if(offset < 56250u) {
+    if(offset < 56250) {
         TCC0.CCA = offset;
-        TCC0.CCB = offset + 6250u;
+        TCC0.CCB = offset + 6250;
         PORTC.PIN0CTRL = 0x00u;
     } else {
         TCC0.CCA = offset;
-        TCC0.CCB = offset - 56249u;
+        TCC0.CCB = offset - 56249;
         PORTC.PIN0CTRL = 0x40u;
     }
 }
@@ -238,6 +241,7 @@ inline void alignPPS() {
     if(diff > MAX_PPS_DELTA) {
         setPpsOffset(TCD0.CCA);
         realigned[statsIndex] = 1;
+        prevPllError = 0;
     } else {
         realigned[statsIndex] = 0;
     }
@@ -255,6 +259,8 @@ inline void onRisingPPS() {
             TCC1.CCA, TCD0.CCA,
             TCC1.CCB, TCD0.CCB
     );
+    // compute delta error
+    int16_t deltaError = currError - prevPllError;
     // dynamic feedback gain
     int16_t step = currError;
     if(step < 0) step = -step;
@@ -262,12 +268,17 @@ inline void onRisingPPS() {
 
     // update PLL feedback with overshoot damping
     if(PORTB.IN & 1u) {
-        incFeedback(step);
+        if(deltaError >= 0) {
+            incFeedback(step);
+        }
     } else {
-        decFeedback(step);
+        if(deltaError <= 0) {
+            decFeedback(step);
+        }
     }
 
     // update status ring
+    prevPllError = currError;
     error[statsIndex] = currError;
     adjustment[statsIndex] = pllFeedback;
     adc_temp[statsIndex] = ADCA.CH0.RES;
@@ -326,14 +337,20 @@ inline void onRisingPPS() {
 // DAC output twiddling
 static volatile uint8_t twiddle = 0;
 ISR(TCD1_OVF_vect, ISR_BLOCK) {
-    uint8_t t = twiddle;
-    DACB.CH0DATA = pllFeedback + t;
-    t += 0x01u;
-    t &= 0x0fu;
-    twiddle = t;
+    DACB.CH0DATA = pllFeedback + twiddle;
+    twiddle = (twiddle + 1u) & 0xfu;
 }
 
 // PPS leading edge
 ISR(TCD0_CCA_vect, ISR_NOBLOCK) {
     onRisingPPS();
+}
+
+// one second interval
+ISR(TCD0_OVF_vect, ISR_NOBLOCK) {
+    // increment dhcp counter
+    if(++dhcpSec > 5) {
+        dhcpSec = 0;
+        dhcp_6sec_tick();
+    }
 }
