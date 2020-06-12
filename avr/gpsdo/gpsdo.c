@@ -339,8 +339,8 @@ static volatile uint8_t twiddle = 0;
 ISR(TCD1_OVF_vect, ISR_BLOCK) {
     uint8_t t = twiddle;
     DACB.CH0DATA = pllFeedback + t;
-    t += 1;
-    t &= 0xfu;
+    t += 0x01u;
+    t &= 0x0fu;
     twiddle = t;
 }
 
