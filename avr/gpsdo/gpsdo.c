@@ -34,7 +34,6 @@
 #define MOD_ALL_HI ( 12499999)
 #define MOD_ALL_LO (-12500000)
 
-volatile uint8_t dhcpSec;
 volatile uint16_t pllFeedback;
 
 volatile int16_t prevPllError;
@@ -59,7 +58,6 @@ void setPpsOffset(uint16_t offset);
 uint8_t readProdByte(const volatile uint8_t *offset);
 
 void initGPSDO() {
-    dhcpSec = 0;
     pllFeedback = 0;
     statsIndex = 0;
     pllLocked = 0;
@@ -119,7 +117,7 @@ void initGPSDO() {
     TCD0.CTRLD = 0x3du;
     // mid priority capture interrupt
     TCD0.INTCTRLB = 0x02u;
-    // mid priority overflow interrupt
+    // mid priority overflow interrupt (ISR located in net/dhcp_client.c to reduce overhead)
     TCD0.INTCTRLA = 0x02u;
     TCD0.PER = DIV_MSB - 1u;
     TCD0.CCA = 0u;
@@ -183,13 +181,13 @@ float getPllTemperature() {
 }
 
 void setPpsOffset(uint16_t offset) {
-    if(offset < 56250) {
+    if(offset < 56250u) {
         TCC0.CCA = offset;
-        TCC0.CCB = offset + 6250;
+        TCC0.CCB = offset + 6250u;
         PORTC.PIN0CTRL = 0x00u;
     } else {
         TCC0.CCA = offset;
-        TCC0.CCB = offset - 56249;
+        TCC0.CCB = offset - 56249u;
         PORTC.PIN0CTRL = 0x40u;
     }
 }
@@ -347,13 +345,4 @@ ISR(TCD1_OVF_vect, ISR_BLOCK) {
 // PPS leading edge
 ISR(TCD0_CCA_vect, ISR_NOBLOCK) {
     onRisingPPS();
-}
-
-// one second interval
-ISR(TCD0_OVF_vect, ISR_NOBLOCK) {
-    // increment dhcp counter
-    if(++dhcpSec > 5) {
-        dhcpSec = 0;
-        dhcp_6sec_tick();
-    }
 }

@@ -15,6 +15,7 @@
  * lease renewal.
  *********************************************/
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <string.h>
 #include <stdlib.h>
@@ -70,8 +71,17 @@ static uint16_t dhcp_opt_leasetime_minutes=0;
 // Lease time renewal and time keeping.
 // you must call this function every 6 seconds. It is save
 // to do this from interrupt
-void dhcp_6sec_tick(void){
+//void dhcp_6sec_tick(void){
+//        dhcp_6sec_cnt++;
+//}
+// one second interval
+volatile uint8_t dhcpSec = 0;
+ISR(TCD0_OVF_vect, ISR_NOBLOCK) {
+    // increment dhcp counter
+    if(++dhcpSec > 5) {
+        dhcpSec = 0;
         dhcp_6sec_cnt++;
+    }
 }
 
 // This function writes a basic message template into buf
