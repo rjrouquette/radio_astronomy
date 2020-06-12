@@ -43,7 +43,6 @@ volatile uint16_t adc_temp[RING_SIZE];
 volatile uint16_t adjustment[RING_SIZE];
 volatile int16_t error[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
-volatile int32_t ppsAlignment;
 
 volatile uint8_t pllLocked;
 volatile uint8_t pllSettled;
@@ -70,7 +69,6 @@ void initGPSDO() {
     pllAdjustment = 0;
     pllTemperature = 0;
     prevPllError = 0;
-    ppsAlignment = 0;
 
     // init DAC
     DACB.CTRLC = 0x09u; // AVCC Ref, left-aligned
@@ -201,11 +199,6 @@ int16_t getDelta(uint16_t lsbA, uint16_t msbA, uint16_t lsbB, uint16_t msbB) {
     int32_t a = (((uint32_t)msbA) * DIV_LSB) + lsbA;
     int32_t b = (((uint32_t)msbB) * DIV_LSB) + lsbB;
 
-    if(b != ppsAlignment) {
-        ppsAlignment = b;
-        realigned[statsIndex] = 1;
-    }
-
     // modulo difference
     int32_t diff = b - a;
     if(diff > MOD_ALL_HI)
@@ -269,23 +262,17 @@ inline void onRisingPPS() {
     // compute delta error
     int16_t deltaError = currError - prevPllError;
     // dynamic feedback gain
-    int16_t step = currError / 2;
+    int16_t step = currError;
     if(step < 0) step = -step;
     if(step > 255) step = 255;
 
     // update PLL feedback with overshoot damping
     if(PORTB.IN & 1u) {
-        if(step == 0) {
-            incFeedback(1);
-        }
-        else if(deltaError > 0) {
+        if(deltaError > 0) {
             incFeedback(step);
         }
     } else {
-        if(step == 0) {
-            decFeedback(1);
-        }
-        else if(deltaError < 0) {
+        if(deltaError < 0) {
             decFeedback(step);
         }
     }
