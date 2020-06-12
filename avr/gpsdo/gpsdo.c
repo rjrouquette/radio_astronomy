@@ -337,8 +337,11 @@ inline void onRisingPPS() {
 // DAC output twiddling
 static volatile uint8_t twiddle = 0;
 ISR(TCD1_OVF_vect, ISR_BLOCK) {
-    DACB.CH0DATA = pllFeedback + twiddle;
-    twiddle = (twiddle + 1u) & 0xfu;
+    uint8_t t = twiddle;
+    DACB.CH0DATA = pllFeedback + t;
+    t += 1;
+    t &= 0xfu;
+    twiddle = t;
 }
 
 // PPS leading edge
