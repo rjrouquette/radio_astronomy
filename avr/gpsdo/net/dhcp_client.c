@@ -76,7 +76,7 @@ static uint16_t dhcp_opt_leasetime_minutes=0;
 //}
 // one second interval
 volatile uint8_t dhcpSec = 0;
-ISR(TCD0_OVF_vect, ISR_NOBLOCK) {
+ISR(TCD0_OVF_vect, ISR_BLOCK) {
     // increment dhcp counter
     if(++dhcpSec > 5) {
         dhcpSec = 0;
