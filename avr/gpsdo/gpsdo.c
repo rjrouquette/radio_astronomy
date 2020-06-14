@@ -260,26 +260,25 @@ inline void onRisingPPS() {
     );
     // compute delta error
     int16_t deltaError = currError - prevPllError;
-    // dynamic feedback gain
-    int16_t step = currError;
-    if(step < 0) step = -step;
-    if(step > 255) step = 255;
 
-    // update PLL feedback with overshoot damping
-    if(PORTB.IN & 1u) {
-        if(deltaError > 0) {
-            incFeedback(step);
-        }
-        else if(deltaError == 0) {
-            incFeedback(1);
-        }
+    // dynamic feedback gain
+    int16_t step;
+    if(pllLocked) {
+        step = 1;
     } else {
-        if(deltaError < 0) {
+        step = currError;
+        if (step < 0) step = -step;
+        if (step > 1) step = (step - 1) / 2;
+        if (step > 255) step = 255;
+    }
+
+    // update PLL feedback
+    if (PORTB.IN & 1u) {
+        if(deltaError >= 0)
+            incFeedback(step);
+    } else {
+        if(deltaError <= 0)
             decFeedback(step);
-        }
-        else if(deltaError == 0) {
-            decFeedback(1);
-        }
     }
 
     // update status ring
