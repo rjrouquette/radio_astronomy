@@ -297,7 +297,7 @@ ISR(USARTC1_RXC_vect, ISR_NOBLOCK) {
 
 void sendGpsConfig(const char *pstr) {
     for(;;) {
-        char byte = pgm_read_byte(pstr);
+        char byte = pgm_read_byte(pstr++);
         if(byte == 0) break;
         while(!(USARTC1.STATUS & 0x20u)) nop();
         USARTC1.DATA = byte;
