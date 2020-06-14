@@ -37,6 +37,7 @@ static volatile uint8_t rx_cnt = 0;
 char gpsMsgs[4][83];
 
 void initSysClock(void);
+void sendGpsConfig(const char *pstr);
 uint32_t appendSimpleHash(uint8_t byte, uint32_t hash);
 void initMacAddress();
 void arpresolver_result_callback(uint8_t *ip __attribute__((unused)),uint8_t reference_number,uint8_t *mac);
@@ -101,6 +102,8 @@ int main(void) {
     USARTC1.CTRLA = 0x10u;
     USARTC1.CTRLC = 0x03u;
     USARTC1.CTRLB = 0x10u;
+    // set PPS clock frequency to 64MHz
+    sendGpsConfig(PSTR("$PSTMSETPAR,1197,64*1\r\n"));
 
     // startup complete
     PMIC.CTRL = 0x07u; // enable all interrupts
@@ -287,5 +290,14 @@ ISR(USARTC1_RXC_vect, ISR_NOBLOCK) {
             strcpy(gpsMsgs[3], gpsMsgs[0]);
             dateTimeReady = 1u;
         }
+    }
+}
+
+void sendGpsConfig(const char *pstr) {
+    for(;;) {
+        char byte = pgm_read_byte(pstr);
+        if(byte == 0) break;
+        while(!(USARTC1.STATUS & 0x20u)) nop();
+        USARTC1.DATA = byte;
     }
 }
