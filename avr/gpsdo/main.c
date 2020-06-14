@@ -104,6 +104,8 @@ int main(void) {
     USARTC1.CTRLB = 0x10u;
     // set PPS clock frequency to 64MHz
     sendGpsConfig(PSTR("$PSTMSETPAR,1197,64*1\r\n"));
+    // disable low power mode
+    sendGpsConfig(PSTR("$PSTMSETPAR,1200,0x80000000,2*46\r\n"))
 
     // startup complete
     PMIC.CTRL = 0x07u; // enable all interrupts
