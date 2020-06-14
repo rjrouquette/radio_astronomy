@@ -263,7 +263,7 @@ inline void onRisingPPS() {
 
     // dynamic feedback gain
     int16_t step;
-    if(pllSettled) {
+    if(pllLocked) {
         step = 1;
     } else {
         step = currError;
