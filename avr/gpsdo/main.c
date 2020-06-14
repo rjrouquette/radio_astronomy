@@ -106,6 +106,8 @@ int main(void) {
     sendGpsConfig(PSTR("$PSTMSETPAR,1197,64*1\r\n"));
     // disable low power mode
     sendGpsConfig(PSTR("$PSTMSETPAR,1200,0x80000000,2*46\r\n"));
+    // disable low power mode
+    sendGpsConfig(PSTR("$PSTMCFGLPA,0,1,1,1,8,60,180,0,0,15,9,7000*39\r\n"));
 
     // startup complete
     PMIC.CTRL = 0x07u; // enable all interrupts
