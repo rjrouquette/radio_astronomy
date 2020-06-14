@@ -39,7 +39,6 @@ volatile uint16_t pllFeedback;
 volatile int16_t prevPllError;
 volatile uint8_t statsIndex;
 volatile uint16_t adc_temp[RING_SIZE];
-volatile uint16_t adjustment[RING_SIZE];
 volatile int16_t error[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
 
@@ -75,9 +74,6 @@ void initGPSDO() {
     while(!(DACB.STATUS & 0x01u)) nop();
     DACB.CH0DATA = ZERO_FB;
     pllFeedback = ZERO_FB;
-    for(uint8_t i = 0; i < RING_SIZE; i++) {
-        adjustment[i] = pllFeedback;
-    }
 
     // DAC Twiddling
     TCD1.CTRLB = 0x30u;
@@ -284,26 +280,21 @@ inline void onRisingPPS() {
     // update status ring
     prevPllError = currError;
     error[statsIndex] = currError;
-    adjustment[statsIndex] = pllFeedback;
     adc_temp[statsIndex] = ADCA.CH0.RES;
     statsIndex = (statsIndex + 1u) & (RING_SIZE - 1u);
 
     // update statistics
     ledOn(LED0);
-    pllLocked = 1;
-    int64_t acc = 0;
-    for(uint8_t i = 0; i < RING_SIZE; i++) {
-        acc += adjustment[i];
-        pllLocked &= (realigned[i] ^ 1u);
-    }
-    pllAdjustment = (float) acc;
+    pllAdjustment = (float) pllFeedback;
     pllAdjustment /= RING_SIZE;
     pllAdjustment -= ZERO_FB;
     pllAdjustment *= PPM_SCALE;
 
-    acc = 0;
+    pllLocked = 1;
+    int64_t acc = 0;
     for(uint8_t i = 0; i < RING_SIZE; i++) {
         acc += error[i];
+        pllLocked &= (realigned[i] ^ 1u);
     }
     pllError = (float) acc;
     pllError /= RING_SIZE;
