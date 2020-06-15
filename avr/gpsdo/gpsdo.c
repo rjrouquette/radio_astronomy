@@ -36,6 +36,7 @@
 
 volatile uint16_t pllFeedback;
 
+volatile int16_t prevError;
 volatile int32_t integrator;
 volatile uint8_t statsIndex;
 volatile uint16_t adc_temp[RING_SIZE];
@@ -66,6 +67,7 @@ void initGPSDO() {
     pllAdjustment = 0;
     pllTemperature = 0;
     integrator = 0;
+    prevError = 0;
 
     // init DAC
     DACB.CTRLC = 0x09u; // AVCC Ref, left-aligned
@@ -257,8 +259,9 @@ inline void onRisingPPS() {
     integrator += currError;
     // update PLL feedback
     int32_t fb = integrator;
-    fb /= 256;
-    fb += currError;
+    fb /= 512;
+    fb += currError * 2;
+    fb -= currError - prevError;
     fb += ZERO_FB;
     if(fb >= MAX_FB)
         pllFeedback = MAX_FB;
@@ -267,6 +270,7 @@ inline void onRisingPPS() {
     } else {
         pllFeedback = fb;
     }
+    prevError = currError;
 
     // update status ring
     error[statsIndex] = currError;
