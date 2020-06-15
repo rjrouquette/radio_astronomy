@@ -36,7 +36,7 @@
 
 volatile uint16_t pllFeedback;
 
-volatile int16_t prevPllError;
+volatile int32_t integrator;
 volatile uint8_t statsIndex;
 volatile uint16_t adc_temp[RING_SIZE];
 volatile int16_t error[RING_SIZE];
@@ -65,7 +65,7 @@ void initGPSDO() {
     pllErrorRms = 0;
     pllAdjustment = 0;
     pllTemperature = 0;
-    prevPllError = 0;
+    integrator = 0;
 
     // init DAC
     DACB.CTRLC = 0x09u; // AVCC Ref, left-aligned
@@ -236,7 +236,6 @@ inline void alignPPS() {
     if(diff > MAX_PPS_DELTA) {
         setPpsOffset(TCD0.CCA);
         realigned[statsIndex] = 1;
-        prevPllError = 0;
     } else {
         realigned[statsIndex] = 0;
     }
@@ -254,31 +253,28 @@ inline void onRisingPPS() {
             TCC1.CCA, TCD0.CCA,
             TCC1.CCB, TCD0.CCB
     );
-    // compute delta error
-    int16_t deltaError = currError - prevPllError;
 
-    // dynamic feedback gain
-    int16_t step;
-    if(pllLocked) {
-        step = 1;
-    } else {
-        step = currError;
-        if (step < 0) step = -step;
-        if (step > 1) step = (step - 1) / 2;
-        if (step > 255) step = 255;
-    }
-
-    // update PLL feedback
+    integrator += currError * 2;
+    // sub-precision PLL feedback
     if (PORTB.IN & 1u) {
-        if(deltaError >= 0)
-            incFeedback(step);
+        ++integrator;
     } else {
-        if(deltaError <= 0)
-            decFeedback(step);
+        --integrator;
+    }
+    // update PLL feedback
+    int32_t fb = integrator;
+    fb /= 256u;
+    fb += currError;
+    fb += ZERO_FB;
+    if(fb >= MAX_FB)
+        pllFeedback = MAX_FB;
+    else if(fb < 0) {
+        pllFeedback = 0;
+    } else {
+        pllFeedback = fb;
     }
 
     // update status ring
-    prevPllError = currError;
     error[statsIndex] = currError;
     adc_temp[statsIndex] = ADCA.CH0.RES;
     statsIndex = (statsIndex + 1u) & (RING_SIZE - 1u);
@@ -286,7 +282,6 @@ inline void onRisingPPS() {
     // update statistics
     ledOn(LED0);
     pllAdjustment = (float) pllFeedback;
-    pllAdjustment /= RING_SIZE;
     pllAdjustment -= ZERO_FB;
     pllAdjustment *= PPM_SCALE;
 
