@@ -253,17 +253,11 @@ inline void onRisingPPS() {
             TCC1.CCA, TCD0.CCA,
             TCC1.CCB, TCD0.CCB
     );
-
-    integrator += currError * 2;
-    // sub-precision PLL feedback
-    if (PORTB.IN & 1u) {
-        ++integrator;
-    } else {
-        --integrator;
-    }
+    // integrate error
+    integrator += currError;
     // update PLL feedback
     int32_t fb = integrator;
-    fb /= 256u;
+    fb /= 256;
     fb += currError;
     fb += ZERO_FB;
     if(fb >= MAX_FB)
