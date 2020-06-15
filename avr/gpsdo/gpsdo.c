@@ -255,21 +255,42 @@ inline void onRisingPPS() {
             TCC1.CCA, TCD0.CCA,
             TCC1.CCB, TCD0.CCB
     );
-    // integrate error
-    integrator += currError;
-    // update PLL feedback
-    int32_t fb = integrator;
-    fb /= 512;
-    fb += currError * 2;
-    fb -= currError - prevError;
-    fb += ZERO_FB;
-    if(fb >= MAX_FB)
-        pllFeedback = MAX_FB;
-    else if(fb < 0) {
-        pllFeedback = 0;
+    int16_t deltaError = currError - prevError;
+
+    if(pllSettled) {
+        // integrate error
+        integrator += currError;
+        // update PLL feedback
+        int32_t fb = integrator;
+        fb /= 256;
+        fb += currError * 2;
+        fb -= deltaError;
+        fb += ZERO_FB;
+        if(fb >= MAX_FB)
+            pllFeedback = MAX_FB;
+        else if(fb < 0) {
+            pllFeedback = 0;
+        } else {
+            pllFeedback = fb;
+        }
     } else {
-        pllFeedback = fb;
+        // fast initial lock
+        int16_t step = currError;
+        if(step < 0) step = -step;
+        if(step > 255) step = 255;
+        if(currError > 0) {
+            if(deltaError >= 0)
+                incFeedback(step);
+        }
+        else {
+            if(deltaError <= 0)
+                decFeedback(step);
+        }
+        integrator = pllFeedback;
+        integrator -= ZERO_FB;
+        integrator *= 256;
     }
+
     prevError = currError;
 
     // update status ring
