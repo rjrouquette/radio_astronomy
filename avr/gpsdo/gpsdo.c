@@ -19,7 +19,7 @@
 #define RES_NS (20)
 #define PID_P (2) // multiplier
 #define PID_I (64) // divisor
-#define PID_D (1) // multiplier
+#define PID_D (-1) // multiplier
 
 // ppm scalar (effective ppm per bit with +/- 50ppm pull range)
 #define PPM_SCALE (0.0015443f)
@@ -267,7 +267,7 @@ inline void onRisingPPS() {
         int32_t fb = integrator;
         fb /= PID_I;
         fb += currError * PID_P;
-        fb -= deltaError * PID_D;
+        fb += deltaError * PID_D;
         fb += ZERO_FB;
         if(fb >= MAX_FB)
             pllFeedback = MAX_FB;
