@@ -26,7 +26,7 @@
 
 // loop tuning
 #define MAX_FB (4095u << 4u)
-#define ZERO_FB (2173u << 4u) // 0 ppm
+#define ZERO_FB (2048u << 4u) // 0 ppm
 
 // statistics calculation
 #define RING_SIZE (64u)
@@ -36,13 +36,13 @@
 // PID control loop
 #define PID_RES (1024)
 // stable lock
-#define PID_P (1024) // 1
-#define PID_I (4)   // 0.0039
-#define PID_D (0)   // 0
+#define PID_P (3413)    // 3.333 = (20ns / 1.5 ppb) / 4s
+#define PID_I (53)      // 0.052 = (20ns / 1.5 ppb) / 256s
+#define PID_D (0)       // 0
 // initial lock
-#define PID_P_FAST (4096) // 4
-#define PID_I_FAST (256)  // 0.25
-#define PID_D_FAST (0)    // 0
+#define PID_P_FAST (6827)   // 6.666 = (20ns / 1.5 ppb) / 2s
+#define PID_I_FAST (213)    // 0.208 = (20ns / 1.5 ppb) / 64s
+#define PID_D_FAST (0)      // 0
 
 // ppm scalar (effective ppm per bit with +/- 50ppm pull range)
 #define PPM_SCALE (0.0015443f)
