@@ -10,37 +10,52 @@
 #include "leds.h"
 #include "net/dhcp_client.h"
 
-// loop tuning
-#define MAX_FB (4095u << 4u)
-#define ZERO_FB (2173u << 4u) // 0 ppm
-#define MAX_PPS_DELTA (1) // 16 microseconds
-#define SETTLED_VAR (250) // 250 nanoseconds RMS
-#define RING_SIZE (64u)
-#define RES_NS (20)
-#define PID_P (2) // multiplier
-#define PID_I (256) // divisor
-#define PID_D (-1) // multiplier
-
-// ppm scalar (effective ppm per bit with +/- 50ppm pull range)
-#define PPM_SCALE (0.0015443f)
-
 // hi-res counter
 #define DIV_LSB (400)
-
 // low-res counter
-#define DIV_MSB    ( 62500)
-#define MOD_MSB_HI ( 31249)
-#define MOD_MSB_LO (-31250)
-
+#define DIV_MSB (62500)
 // combined counters
 #define DIV_ALL    ( 25000000)
 #define MOD_ALL_HI ( 12499999)
 #define MOD_ALL_LO (-12500000)
 
+// hard PPS offset adjustment threshold
+// PPS can can be realigned in 16 us steps
+// tracking error has 20 ns step size
+#define MAX_PPS_ERROR (1000) // 20 microseconds
+
+// loop tuning
+#define MAX_FB (4095u << 4u)
+#define ZERO_FB (2173u << 4u) // 0 ppm
+
+// statistics calculation
+#define RING_SIZE (64u)
+#define RES_NS (20)
+#define SETTLED_VAR (250) // 250 nanoseconds RMS
+
+// PID control loop
+#define PID_RES (256)
+// stable lock
+#define PID_P (256) // 1
+#define PID_I (1)   // 0.0039
+#define PID_D (0)   // 0
+// initial lock
+#define PID_P_FAST (1024) // 4
+#define PID_I_FAST (64)  // 0.25
+#define PID_D_FAST (0)    // 0
+
+// ppm scalar (effective ppm per bit with +/- 50ppm pull range)
+#define PPM_SCALE (0.0015443f)
+
 volatile uint16_t pllFeedback;
 
+// PID control loop
 volatile int16_t prevError;
 volatile int32_t integrator;
+volatile int32_t cP;
+volatile int32_t cI;
+volatile int32_t cD;
+
 volatile uint8_t statsIndex;
 volatile uint16_t adc_temp[RING_SIZE];
 volatile int16_t error[RING_SIZE];
@@ -71,6 +86,9 @@ void initGPSDO() {
     pllTemperature = 0;
     integrator = 0;
     prevError = 0;
+    cP = 0;
+    cI = 0;
+    cD = 0;
 
     // init DAC
     DACB.CTRLC = 0x09u; // AVCC Ref, left-aligned
@@ -213,88 +231,52 @@ int16_t getDelta(uint16_t lsbA, uint16_t msbA, uint16_t lsbB, uint16_t msbB) {
     return (int16_t) ((diff * 2) + 1);
 }
 
-inline void decFeedback(uint8_t step) {
-    if(pllFeedback > (step - 1u)) {
-        pllFeedback -= step;
-    }
+// update PID control loop
+void updatePID(int16_t currError) {
+    // update integrator
+    integrator += currError * cI;
+
+    // compute delta error
+    int16_t deltaError = currError - prevError;
+    prevError = currError;
+
+    // compute feedback
+    int32_t fb = integrator;
+    fb += currError * cP;
+    fb += deltaError * cD;
+    fb /= PID_RES;
+    fb += ZERO_FB;
+
+    // limit feedback range
+    if(fb > MAX_FB) fb = MAX_FB;
+    if(fb < 0) fb = 0;
+
+    // apply feedback
+    pllFeedback = fb;
 }
 
-inline void incFeedback(uint8_t step) {
-    if(pllFeedback < MAX_FB - step) {
-        pllFeedback += step;
-    }
-}
+void onRisingPPS() {
+    ledOn(LED0);
 
-inline void alignPPS() {
-    int32_t a = (uint32_t) TCD0.CCA;
-    int32_t b = (uint32_t) TCD0.CCB;
+    // measure tracking error
+    int16_t currError = getDelta(
+            TCC1.CCA, TCD0.CCA,
+            TCC1.CCB, TCD0.CCB
+    );
 
-    // modulo difference
-    int32_t diff = a - b;
-    if(diff > MOD_MSB_HI)
-        diff = DIV_MSB - diff;
-    if(diff < MOD_MSB_LO)
-        diff = DIV_MSB + diff;
+    // update PID loop
+    updatePID(currError);
 
-    // force PPS alignment if outside tolerance
-    if(diff < 0) diff = -diff;
-    if(diff > MAX_PPS_DELTA) {
+    // force PPS realignment if necessary
+    if(
+        currError >  MAX_PPS_ERROR ||
+        currError < -MAX_PPS_ERROR
+    ) {
         setPpsOffset(TCD0.CCA);
         realigned[statsIndex] = 1;
     } else {
         realigned[statsIndex] = 0;
     }
-}
-
-inline void onRisingPPS() {
-    // longer led pulse when locked
-    if(pllLocked) ledOn(LED0);
-
-    // check if PPS was realigned
-    alignPPS();
-
-    // compute current tracking error
-    int16_t currError = getDelta(
-            TCC1.CCA, TCD0.CCA,
-            TCC1.CCB, TCD0.CCB
-    );
-    int16_t deltaError = currError - prevError;
-
-    if(pllSettled) {
-        // integrate error
-        integrator += currError;
-        // update PLL feedback
-        int32_t fb = integrator;
-        fb /= PID_I;
-        fb += currError * PID_P;
-        fb += deltaError * PID_D;
-        fb += ZERO_FB;
-        if(fb >= MAX_FB)
-            pllFeedback = MAX_FB;
-        else if(fb < 0) {
-            pllFeedback = 0;
-        } else {
-            pllFeedback = fb;
-        }
-    } else {
-        // fast initial lock
-        int16_t step = currError;
-        if(step < 0) step = -step;
-        if(step > 255) step = 255;
-        if(currError > 0) {
-            if(deltaError >= 0)
-                incFeedback(step);
-        }
-        else {
-            if(deltaError <= 0)
-                decFeedback(step);
-        }
-        integrator = pllFeedback;
-        integrator -= ZERO_FB;
-        integrator *= PID_I;
-    }
-
-    prevError = currError;
 
     // update status ring
     error[statsIndex] = currError;
@@ -302,7 +284,6 @@ inline void onRisingPPS() {
     statsIndex = (statsIndex + 1u) & (RING_SIZE - 1u);
 
     // update statistics
-    ledOn(LED0);
     pllAdjustment = (float) pllFeedback;
     pllAdjustment -= ZERO_FB;
     pllAdjustment *= PPM_SCALE;
@@ -329,7 +310,16 @@ inline void onRisingPPS() {
 
     // determine if loop has settled
     pllSettled = (pllLocked && (pllErrorRms <= SETTLED_VAR));
-    if (!pllSettled) ledOff(LED0);
+    if (pllSettled) {
+        cP = PID_P;
+        cI = PID_I;
+        cD = PID_D;
+    } else {
+        cP = PID_P_FAST;
+        cI = PID_I_FAST;
+        cD = PID_D_FAST;
+        ledOff(LED0);
+    }
 
     // compute temperature
     acc = 0;
