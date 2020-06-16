@@ -18,7 +18,7 @@
 #define RING_SIZE (64u)
 #define RES_NS (20)
 #define PID_P (2) // multiplier
-#define PID_I (64) // divisor
+#define PID_I (256) // divisor
 #define PID_D (-1) // multiplier
 
 // ppm scalar (effective ppm per bit with +/- 50ppm pull range)
