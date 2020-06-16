@@ -17,6 +17,9 @@
 #define SETTLED_VAR (250) // 250 nanoseconds RMS
 #define RING_SIZE (64u)
 #define RES_NS (20)
+#define PID_P (2) // multiplier
+#define PID_I (64) // divisor
+#define PID_D (1) // multiplier
 
 // ppm scalar (effective ppm per bit with +/- 50ppm pull range)
 #define PPM_SCALE (0.0015443f)
@@ -262,9 +265,9 @@ inline void onRisingPPS() {
         integrator += currError;
         // update PLL feedback
         int32_t fb = integrator;
-        fb /= 256;
-        fb += currError * 2;
-        fb -= deltaError;
+        fb /= PID_I;
+        fb += currError * PID_P;
+        fb -= deltaError * PID_D;
         fb += ZERO_FB;
         if(fb >= MAX_FB)
             pllFeedback = MAX_FB;
@@ -288,7 +291,7 @@ inline void onRisingPPS() {
         }
         integrator = pllFeedback;
         integrator -= ZERO_FB;
-        integrator *= 256;
+        integrator *= PID_I;
     }
 
     prevError = currError;
