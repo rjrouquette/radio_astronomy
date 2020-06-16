@@ -34,14 +34,14 @@
 #define SETTLED_VAR (250) // 250 nanoseconds RMS
 
 // PID control loop
-#define PID_RES (256)
+#define PID_RES (1024)
 // stable lock
-#define PID_P (256) // 1
-#define PID_I (1)   // 0.0039
+#define PID_P (1024) // 1
+#define PID_I (4)   // 0.0039
 #define PID_D (0)   // 0
 // initial lock
-#define PID_P_FAST (1024) // 4
-#define PID_I_FAST (64)  // 0.25
+#define PID_P_FAST (4096) // 4
+#define PID_I_FAST (256)  // 0.25
 #define PID_D_FAST (0)    // 0
 
 // ppm scalar (effective ppm per bit with +/- 50ppm pull range)
