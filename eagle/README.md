@@ -15,6 +15,12 @@ The master clock board is based around the STMicro TESEO-LIV3R GPS module and a 
 
 ![alt text][clk_master]
 
+## Slave Clock (GPSDO)
+The slave clock board is based around the SiTime SIT3808 VCXO and provides both clock and PPS recovery.
+
+![alt text][clk_slave]
+
 
 [antenna]: https://github.com/rjrouquette/radio_astronomy/raw/master/images/antenna_layout.png "Antenna Layout"
 [clk_master]: https://github.com/rjrouquette/radio_astronomy/raw/master/images/master_clock_layout.png "Master Clock Layout"
+[clk_slave]: https://github.com/rjrouquette/radio_astronomy/raw/master/images/slave_clock_layout.png "Slave Clock Layout"
