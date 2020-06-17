@@ -11,18 +11,18 @@
 #include "net/dhcp_client.h"
 
 // hi-res counter
-#define DIV_LSB (800)
+#define DIV_LSB (400)
 // low-res counter
 #define DIV_MSB (62500)
 // combined counters
-#define DIV_ALL    ( 50000000)
-#define MOD_ALL_HI ( 25499999)
-#define MOD_ALL_LO (-25000000)
+#define DIV_ALL    ( 25000000)
+#define MOD_ALL_HI ( 12499999)
+#define MOD_ALL_LO (-12500000)
 
 // hard PPS offset adjustment threshold
 // PPS can can be realigned in 16 us steps
-// tracking error has 10 ns step size
-#define MAX_PPS_ERROR (2000) // 20 microseconds
+// tracking error has 20 ns step size
+#define MAX_PPS_ERROR (1000) // 20 microseconds
 
 // loop tuning
 #define MAX_FB (4095u << 4u)
@@ -30,18 +30,18 @@
 
 // statistics calculation
 #define RING_SIZE (64u)
-#define RES_NS (10)
+#define RES_NS (20)
 #define SETTLED_VAR (250) // 250 nanoseconds RMS
 
 // PID control loop
 #define PID_RES (1024)
 // stable lock
-#define PID_P (1707)    // 1.666 = (10ns / 1.5 ppb) / 4s
-#define PID_I (27)      // 0.026 = (10ns / 1.5 ppb) / 256s
+#define PID_P (3413)    // 3.333 = (20ns / 1.5 ppb) / 4s
+#define PID_I (53)      // 0.052 = (20ns / 1.5 ppb) / 256s
 #define PID_D (0)       // 0
 // initial lock
-#define PID_P_FAST (3413)   // 3.333 = (10ns / 1.5 ppb) / 2s
-#define PID_I_FAST (107)    // 0.104 = (10ns / 1.5 ppb) / 64s
+#define PID_P_FAST (6827)   // 6.666 = (20ns / 1.5 ppb) / 2s
+#define PID_I_FAST (213)    // 0.208 = (20ns / 1.5 ppb) / 64s
 #define PID_D_FAST (0)      // 0
 
 // ppm scalar (effective ppm per bit with +/- 50ppm pull range)
@@ -101,7 +101,7 @@ void initGPSDO() {
     // DAC Twiddling
     TCD1.CTRLB = 0x30u;
     TCD1.CTRLD = 0x2du;
-    TCD1.PER = 249u; // 200 kHz @ 50MHz
+    TCD1.PER = 249u; // 100 kHz
     // high priority overflow interrupt
     TCD1.INTCTRLA = 0x03u;
     TCD1.CTRLA = 0x01u;
