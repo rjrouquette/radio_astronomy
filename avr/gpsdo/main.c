@@ -96,9 +96,9 @@ int main(void) {
     initSysClock();
     initGPSDO();
 
-    // init USART for 9600 baud (bsel = -4, bscale = 2588)
-    USARTC1.BAUDCTRLA = 0x1cu;
-    USARTC1.BAUDCTRLB = 0xcau;
+    // init USART for 9600 baud (bsel = 649, bscale = -1)
+    USARTC1.BAUDCTRLA = 0x89u;
+    USARTC1.BAUDCTRLB = 0xf2u;
     USARTC1.CTRLA = 0x10u;
     USARTC1.CTRLC = 0x03u;
     USARTC1.CTRLB = 0x10u;
@@ -211,12 +211,17 @@ void initSysClock(void) {
     OSC.XOSCFAIL = 0x01u; // enable interrupt on clock failure
     nop4();
 
+    // configure PLL
+    OSC.PLLCTRL = 0xc2u; // external clock x2
+    OSC.CTRL |= OSC_PLLEN_bm;
+    while(!(OSC.STATUS & OSC_PLLRDY_bm)); // wait for pll ready
+
     CCP = CCP_IOREG_gc;
     CLK.PSCTRL = 0x00u; // no prescaling
     nop4();
 
     CCP = CCP_IOREG_gc;
-    CLK.CTRL = CLK_SCLKSEL_XOSC_gc; // Select external clock
+    CLK.CTRL = CLK_SCLKSEL_PLL_gc; // Select PLL
     nop4();
 }
 
