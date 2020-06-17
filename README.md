@@ -15,6 +15,12 @@ A master clock system will be employed to minimize timming drift between the SDR
 
 ![alt text][gpsdo]
 
+## Slave Clock
+The slave clock BPSK receivers use digital Costas loops to synchronize SiT 3808 25 MHz VCXOs to the GPSDO.  The receivers provide both clock and PPS recovery and introduce less than 1 ppb of additional phase noise.
+
+![alt text][slave_clock]
+
 
 [digitzer]: https://github.com/rjrouquette/radio_astronomy/raw/master/images/digitizer_block_diagram.png "Block Diagram"
 [gpsdo]: https://github.com/rjrouquette/radio_astronomy/raw/master/images/gpsdo_grafana.png "GPSDO Performance"
+[slave_clock]: https://github.com/rjrouquette/radio_astronomy/raw/master/images/slave_clock_diagram.png "Block Diagram"
