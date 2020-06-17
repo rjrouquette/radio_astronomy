@@ -21,7 +21,7 @@
 
 // hard PPS offset adjustment threshold
 // PPS can can be realigned in 16 us steps
-// tracking error has 20 ns step size
+// tracking error has 10 ns step size
 #define MAX_PPS_ERROR (2000) // 20 microseconds
 
 // loop tuning
@@ -101,7 +101,7 @@ void initGPSDO() {
     // DAC Twiddling
     TCD1.CTRLB = 0x30u;
     TCD1.CTRLD = 0x2du;
-    TCD1.PER = 249u; // 100 kHz
+    TCD1.PER = 249u; // 200 kHz @ 50MHz
     // high priority overflow interrupt
     TCD1.INTCTRLA = 0x03u;
     TCD1.CTRLA = 0x01u;
