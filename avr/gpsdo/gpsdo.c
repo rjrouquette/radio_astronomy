@@ -11,15 +11,15 @@
 #include "net/dhcp_client.h"
 
 // hi-res counter
-#define DIV_LSB (400)
+#define DIV_LSB (500)
 // low-res counter
 #define DIV_MSB (62500)
 // combined counters
-#define DIV_ALL    ( 25000000)
-#define MOD_ALL_HI ( 12499999)
-#define MOD_ALL_LO (-12500000)
+#define DIV_ALL    ( 31250000)
+#define MOD_ALL_HI ( 15624999)
+#define MOD_ALL_LO (-15625000)
 // clock cycle length
-#define CLK_NS (40)
+#define CLK_NS (32)
 
 // hard PPS offset adjustment threshold
 // PPS can can be realigned in 16 us steps
@@ -60,7 +60,7 @@ volatile int32_t cD;
 
 volatile uint8_t statsIndex;
 volatile uint16_t adc_temp[RING_SIZE];
-volatile int16_t error[RING_SIZE];
+volatile int32_t error[RING_SIZE];
 volatile uint8_t realigned[RING_SIZE];
 
 volatile uint8_t pllLocked;
@@ -103,7 +103,7 @@ void initGPSDO() {
     // DAC Twiddling
     TCD1.CTRLB = 0x30u;
     TCD1.CTRLD = 0x2du;
-    TCD1.PER = 249u; // 100 kHz
+    TCD1.PER = 249u;
     // high priority overflow interrupt
     TCD1.INTCTRLA = 0x03u;
     TCD1.CTRLA = 0x01u;

@@ -96,9 +96,9 @@ int main(void) {
     initSysClock();
     initGPSDO();
 
-    // init USART for 9600 baud (bsel = 649, bscale = -1)
-    USARTC1.BAUDCTRLA = 0x89u;
-    USARTC1.BAUDCTRLB = 0xf2u;
+    // init USART for 9600 baud (bsel = 3239, bscale = -4)
+    USARTC1.BAUDCTRLA = 0xa7u;
+    USARTC1.BAUDCTRLB = 0xccu;
     USARTC1.CTRLA = 0x10u;
     USARTC1.CTRLC = 0x03u;
     USARTC1.CTRLB = 0x10u;
@@ -197,6 +197,7 @@ int main(void) {
     return 0;
 }
 
+// configure xmega to run at 31.25 Hz
 void initSysClock(void) {
     // drop down to 2MHz clock before changing PLL settings
     CCP = CCP_IOREG_gc;
@@ -212,12 +213,12 @@ void initSysClock(void) {
     nop4();
 
     // configure PLL
-    OSC.PLLCTRL = 0xc2u; // external clock x2
+    OSC.PLLCTRL = 0xc5u; // external clock x5
     OSC.CTRL |= OSC_PLLEN_bm;
     while(!(OSC.STATUS & OSC_PLLRDY_bm)); // wait for pll ready
 
     CCP = CCP_IOREG_gc;
-    CLK.PSCTRL = 0x00u; // no prescaling
+    CLK.PSCTRL = CLK_PSADIV_4_gc; // divide by 4
     nop4();
 
     CCP = CCP_IOREG_gc;

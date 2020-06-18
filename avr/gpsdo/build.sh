@@ -3,7 +3,7 @@
 # cleanup old files
 rm gpsdo.elf gpsdo.hex
 
-avr-gcc -Os -mmcu=atxmega16a4u -DF_CPU=25000000 -Wl,-u,vfprintf -lprintf_flt -lm -o gpsdo.elf main.c gpsdo.c net/*.c
+avr-gcc -Os -mmcu=atxmega16a4u -DF_CPU=31250000 -Wl,-u,vfprintf -lprintf_flt -lm -o gpsdo.elf main.c gpsdo.c net/*.c
 if [ $? -ne 0 ]; then exit 1; fi
 
 avr-objcopy -j .text -j .data -O ihex gpsdo.elf gpsdo.hex
