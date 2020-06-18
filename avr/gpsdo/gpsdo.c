@@ -27,8 +27,8 @@
 #define MAX_PPS_ERROR (20000) // 20 microseconds
 
 // loop tuning
-#define MAX_FB (4095u << 4u)
-#define ZERO_FB (2048u << 4u) // 0 ppm
+#define MAX_FB (0xfff0u) // 4095 * 16
+#define ZERO_FB (0x7ff8u) // 2047.5 * 16
 
 // statistics calculation
 #define RING_SIZE (64u)
@@ -38,8 +38,8 @@
 #define ERROR_LIMIT (2048) // 2.048 microseconds
 #define PID_RES (1000)
 // stable lock
-#define PID_P (42)      // 0.042 = (1ns / 1.5 ppb) / 16s
-#define PID_I (3)       // 0.002 = (1ns / 1.5 ppb) / 256s
+#define PID_P (83)      // 0.083 = (1ns / 1.5 ppb) / 8s
+#define PID_I (3)       // 0.003 = (1ns / 1.5 ppb) / 256s
 #define PID_D (0)       // 0
 // initial lock
 #define PID_P_FAST (333)    // 0.333 = (1ns / 1.5 ppb) / 2s
