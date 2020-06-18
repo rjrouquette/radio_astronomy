@@ -11,19 +11,19 @@
 #include "net/dhcp_client.h"
 
 // hi-res counter
-#define DIV_LSB (500)
+#define DIV_LSB (800)
 // low-res counter
 #define DIV_MSB (62500)
 // combined counters
-#define DIV_ALL    ( 31250000)
-#define MOD_ALL_HI ( 15624999)
-#define MOD_ALL_LO (-15625000)
+#define DIV_ALL    ( 50000000)
+#define MOD_ALL_HI ( 24999999)
+#define MOD_ALL_LO (-25000000)
 // clock cycle length
-#define CLK_NS (32)
+#define CLK_NS (20)
 
 // hard PPS offset adjustment threshold
 // PPS can can be realigned in 16 us steps
-// tracking error has 20 ns step size
+// tracking error has 1 ns resolution
 #define MAX_PPS_ERROR (20000) // 20 microseconds
 
 // loop tuning
