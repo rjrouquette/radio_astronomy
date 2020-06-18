@@ -197,7 +197,7 @@ int main(void) {
     return 0;
 }
 
-// configure xmega to run at 31.25 Hz
+// configure xmega to run at 31.25 MHz
 void initSysClock(void) {
     // drop down to 2MHz clock before changing PLL settings
     CCP = CCP_IOREG_gc;
