@@ -38,13 +38,13 @@
 #define ERROR_LIMIT (2048) // 2.048 microseconds
 #define PID_RES (1000)
 // stable lock
-#define PID_P (83)      // 0.083 = (1.0 ns / 1.5 ppb) / 8.0 s
+#define PID_P (32)      // 0.083 = (1.0 ns / 1.5 ppb) / 8.0 s
 //#define PID_P (1048)    // 1.048 = (1.0 ns / 119.24 ppt) / 8.0 s
-#define PID_I (3)       // 0.003 = (1.0 ns / 1.5 ppb) / 256.0 s
+#define PID_I (1)       // 0.003 = (1.0 ns / 1.5 ppb) / 256.0 s
 //#define PID_I (33)      // 0.033 = (1.0 ns / 119.24 ppt) / 256.0 s
 #define PID_D (0)       // 0
 // initial lock
-#define PID_P_FAST (333)    // 0.333 = (1.0 ns / 1.5 ppb) / 2.0 s
+#define PID_P_FAST (320)    // 0.333 = (1.0 ns / 1.5 ppb) / 2.0 s
 //#define PID_P_FAST (4193)   // 4.193 = (1.0 ns / 119.24 ppt) / 2.0 s
 #define PID_I_FAST (10)     // 0.010 = (1.0 ns / 1.5 ppb) / 64.0 s
 //#define PID_I_FAST (131)    // 0.131 = (1.0 ns / 119.24 ppt) / 64.0 s
@@ -109,7 +109,7 @@ void initGPSDO() {
     // DAC Twiddling
     TCD1.CTRLB = 0x30u;
     TCD1.CTRLD = 0x2du;
-    TCD1.PER = 249u;
+    TCD1.PER = 499u;
     // high priority overflow interrupt
     TCD1.INTCTRLA = 0x03u;
     TCD1.CTRLA = 0x01u;

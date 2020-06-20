@@ -163,7 +163,7 @@ void enc28j60Init(uint8_t *macaddr) {
     //ENC28J60_CONTROL_PORT &= ~(1 << ENC28J60_CONTROL_SCK); // SCK low
     //
     // initialize SPI interface
-    SPID.CTRL = 0xd0u;
+    SPID.CTRL = 0x50u;
     // perform system reset
     enc28j60WriteOp(ENC28J60_SOFT_RESET, 0, ENC28J60_SOFT_RESET);
     _delay_ms(20); // 20ms
