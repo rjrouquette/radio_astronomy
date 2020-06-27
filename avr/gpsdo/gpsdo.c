@@ -38,22 +38,16 @@
 #define ERROR_LIMIT (2048) // 2.048 microseconds
 #define PID_RES (1000)
 // stable lock
-#define PID_P (64)      // 0.083 = (1.0 ns / 1.5 ppb) / 8.0 s
-//#define PID_P (1048)    // 1.048 = (1.0 ns / 119.24 ppt) / 8.0 s
-#define PID_I (1)       // 0.003 = (1.0 ns / 1.5 ppb) / 256.0 s
-//#define PID_I (33)      // 0.033 = (1.0 ns / 119.24 ppt) / 256.0 s
-#define PID_D (0)       // 0
+#define PID_P (131)         // 0.131 = (1.0 ns / 119.24 ppt) / 64.0 s
+#define PID_I (4)           // 0.004 = (1.0 ns / 119.24 ppt) / 2048.0 s
+#define PID_D (0)           // 0
 // initial lock
-#define PID_P_FAST (320)    // 0.333 = (1.0 ns / 1.5 ppb) / 2.0 s
-//#define PID_P_FAST (4193)   // 4.193 = (1.0 ns / 119.24 ppt) / 2.0 s
-#define PID_I_FAST (10)     // 0.010 = (1.0 ns / 1.5 ppb) / 64.0 s
-//#define PID_I_FAST (131)    // 0.131 = (1.0 ns / 119.24 ppt) / 64.0 s
+#define PID_P_FAST (2097)   // 2.097 = (1.0 ns / 119.24 ppt) / 4.0 s
+#define PID_I_FAST (66)     // 0.066 = (1.0 ns / 119.24 ppt) / 128.0 s
 #define PID_D_FAST (0)      // 0
 
-// ppm scalar (effective ppm per bit with +/- 50ppm pull range)
-#define PPM_SCALE (0.0015443f)
 // ppm scalar (effective ppm per bit with +/- 6.25ppm pull range)
-//#define PPM_SCALE (119.24e-3f)
+#define PPM_SCALE (119.24e-6f)
 
 volatile uint16_t pllFeedback;
 
@@ -76,8 +70,8 @@ volatile float pllErrorRms;
 volatile float pllAdjustment;
 volatile float pllTemperature;
 
-#define CAL_SECOND_TEMP (38.0f)
-#define CAL_SECOND_OFFSET (2315)
+#define CAL_SECOND_TEMP (41.0f)
+#define CAL_SECOND_OFFSET (2245)
 float kelvin_per_adc;
 
 void setPpsOffset(uint16_t offset);
