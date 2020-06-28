@@ -38,7 +38,7 @@
 #define ERROR_LIMIT (2048) // 2.048 microseconds
 #define PID_RES (1000)
 // stable lock
-#define PID_P (131)         // 0.131 = (1.0 ns / 119.24 ppt) / 64.0 s
+#define PID_P (50)          // 0.050 = 119.24 ppt / 20ns
 #define PID_I (4)           // 0.004 = (1.0 ns / 119.24 ppt) / 2048.0 s
 #define PID_D (0)           // 0
 // initial lock
